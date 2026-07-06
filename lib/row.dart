@@ -65,6 +65,9 @@ class MyApp extends StatelessWidget {
 }
               ),
                const Spacer(),//add spacer to add space
+                             Expanded(
+                flex: 1,
+
               Container(
                 color: Colors.blueAccent,
                 height: 100,
@@ -74,6 +77,7 @@ class MyApp extends StatelessWidget {
                   style: TextStyle(fontSize: 25),
                 ),
               ),
+                             ),
             ],
           ),
         ),
