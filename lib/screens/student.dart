@@ -113,7 +113,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          'You must enter your Name and User ID before you can scan.',
+                          'You must enter your Name and Reg No before you can scan.',
                           style: TextStyle(
                             color: Colors.grey[600],
                             fontSize: 13,
@@ -148,7 +148,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                         TextFormField(
                           controller: _idController,
                           decoration: const InputDecoration(
-                            labelText: 'Enter Your User ID / Roll No *',
+                            labelText: 'Enter Your Reg No *',
                             prefixIcon: Icon(Icons.badge),
                             border: OutlineInputBorder(),
                           ),

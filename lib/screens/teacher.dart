@@ -295,7 +295,7 @@ class SubjectQRCodeScreen extends StatelessWidget {
               style: TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
-                color: Colors.black87,
+                color: Colors.white10,
               ),
             ),
             const SizedBox(height: 10),
