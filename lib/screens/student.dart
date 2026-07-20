@@ -183,7 +183,6 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                             backgroundColor: Colors.blue,
                             foregroundColor: Colors.white,
                           ),
-                          icon: const Icon(Icons.qr_code_scanner),
                           label: const Text(
                             'Scan QR Code',
                             style: TextStyle(
