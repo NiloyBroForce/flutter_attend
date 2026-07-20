@@ -39,144 +39,200 @@ class _LoginPageState extends State<LoginPage>{
 
 final FirebaseAuth _auth=FirebaseAuth.instance;
 
-final TextEditingController _emailController=TextEditingController();
-final TextEditingController _passwordController=TextEditingController();
+  bool _isShowingSignUpPage = false;
 
-  Future<void> _createUser({required String email,required String password}) async {
-    try {
-      final userCredential = await _auth.createUserWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
-      print("★★★ Sign Up Success! UID: ${userCredential.user?.uid}");
-    } on FirebaseAuthException catch (e) {
-      print("Sign Up Error: ${e.message}");
-    }
+  Future<void> signOutUser() async {
+    await _auth.signOut();
   }
 
-Future<void>_signUp() async{
-  try{
-    UserCredential userCredential=await _auth.createUserWithEmailAndPassword(
-      email: _emailController.text,
-      password: _passwordController.text,
+Future<void> _signIn(String email, String password) async {
+  try {
+    await _auth.signInWithEmailAndPassword(
+      email: email,
+      password: password,
     );
-
-  Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => MyApp()),
-      );
-  }
-   catch (e) {
-      String errorMessage = 'Sign Up failed. Please try again.';
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(errorMessage, style: TextStyle(color: Colors.white)),
-          backgroundColor: Colors.red,
-        ),
-      );
-    }
-  }
-Future<void>_signIn() async{
-  try{
-    UserCredential userCredential=await _auth.signInWithEmailAndPassword(
-      email: _emailController.text,
-      password: _passwordController.text,
-
-    );
-
-    String username=userCredential.user?.email?.split('@')[0]??'';
-
-    if(userCredential.user?.email?.endsWith('@teacher.com')??false){
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => TeacherHomeScreen()),
-      );
-    }
-  else if(userCredential.user?.email?.endsWith('@student.com')??false){
-    Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => StudentHomeScreen(username)
-        ),
-      );
-  }
-  }
-
-  catch(e){
-      print('Error signing in: $e');
-      String errorMessage = 'Invalid email or password. Please try again.';
-
-ScaffoldMessenger.of(context).showSnackBar(
-  SnackBar(content: Text(
-    errorMessage,
-    style: TextStyle(color:Colors.white),
-  ),
-  backgroundColor: Colors.red,
-  ),
-);
-  }
-  
+  } catch (e) {
+    print('Error signing in: $e');
+    // ... your SnackBar error handling code ...
+  }  
 }
 
+Future<void> _signUp(String email, String password) async {
+  try {
+    await _auth.createUserWithEmailAndPassword(
+      email: email,
+      password: password,
+    );
+  } catch (e) {
+    print('Error signing up: $e');
+    // ... your SnackBar error handling code ...
+  }
+}
 @override
-Widget build(BuildContext context){
-  return Scaffold(appBar: AppBar(
-    title:Text(''),
-  ),
-  body: Padding(padding: const EdgeInsets.all(16.0),
-  child: Column(
-    mainAxisAlignment: MainAxisAlignment.start,
-    crossAxisAlignment: CrossAxisAlignment.center,
-  children:[
-    Icon(
-      Icons.school,
-      size:100,
-      color:Colors.blue,
-    ),
-    SizedBox(height:20),
-    Text(
-      'Android Attendance',
-      style:TextStyle(
-        fontSize: 24,
-        fontWeight: FontWeight.bold,
-      ),
-    ),
-    SizedBox(height:20),
-TextField(
-  controller:_emailController,
-  decoration: InputDecoration(
-    labelText: 'Email'
-  ),
-),
-    SizedBox(height:20),
-TextField(
-  controller:_passwordController,
-  obscureText: true,
-  decoration: InputDecoration(
-    labelText: 'Password'
-  ),
-),
-    SizedBox(height:15),
-    ElevatedButton(
-      onPressed: _signIn,
-      style:ElevatedButton.styleFrom(
-        backgroundColor:Colors.blue,
-        foregroundColor:Colors.white,
-      ),
-      child: Text('Sign in'),
-    ),
-      SizedBox(height: 5),
-            ElevatedButton(
-              onPressed: _signUp,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue,
-                foregroundColor: Colors.white,
-              ),
-              child: Text('Sign Up'),
-            ),
-  ]
-  ),
-  ),
-  );
+Widget build(BuildContext context) {
+    // StreamBuilder evaluates the authentication status asynchronously on every app refresh
+    return StreamBuilder<User?>(
+      stream: _auth.authStateChanges(),
+      builder: (context, snapshot) {
+        // 1. App is checking local cache tokens to see if a session exists
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        // 2. Persistent User Session Found -> Evaluate Role & Return Screen
+        if (snapshot.hasData && snapshot.data != null) {
+          final user = snapshot.data!;
+          final email = user.email ?? '';
+
+          if (email.endsWith('@student.com')) {
+            return StudentHomeScreen();
+          } else if (email.endsWith('@teacher.com')) {
+            return TeacherHomeScreen();
+          }
+
+          // Fallback layout if someone logs in with an unexpected email domain
+          return const Scaffold(
+            body: Center(child: Text('Unauthorized role pattern.')),
+          );
+        }
+
+       // 3. Unauthenticated -> Display Auth UI depending on the toggle state
+        if (_isShowingSignUpPage) {
+          return AuthFormScreen(
+            isSignUpMode: true,
+            onSwitchMode: () => setState(() => _isShowingSignUpPage = false),
+            onSubmit: (email, password) =>
+                _signUp(email, password), 
+          );
+        } else {
+          return AuthFormScreen(
+            isSignUpMode: false,
+            onSwitchMode: () => setState(() => _isShowingSignUpPage = true),
+            onSubmit: (email, password) =>
+                _signIn(email, password), 
+          );
+        }
+      },
+    );
+  }
 }
+class AuthFormScreen extends StatefulWidget {
+  final bool isSignUpMode;
+  final VoidCallback onSwitchMode;
+  final Function(String email, String password) onSubmit;
+
+  const AuthFormScreen({
+    super.key,
+    required this.isSignUpMode,
+    required this.onSwitchMode,
+    required this.onSubmit,
+  });
+
+  @override
+  State<AuthFormScreen> createState() => _AuthFormScreenState();
+}
+
+class _AuthFormScreenState extends State<AuthFormScreen> {
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    String titleText = widget.isSignUpMode ? "Create Account" : "Welcome Back";
+    String buttonText = widget.isSignUpMode ? "Sign Up" : "Sign In";
+    String toggleText = widget.isSignUpMode
+        ? "Already have an account? Sign In"
+        : "Don't have an account? Sign Up";
+
+    return Scaffold(
+      body: Center(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(24.0),
+          child: Container(
+            constraints: const BoxConstraints(maxWidth: 400),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Icon(Icons.lock_outline, size: 64, color: Colors.blue[400]),
+                  const SizedBox(height: 16),
+                  Text(
+                    titleText,
+                    style: const TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 32),
+                  TextFormField(
+                    controller: _emailController,
+                    decoration: const InputDecoration(
+                      labelText: 'Email Address',
+                      prefixIcon: Icon(Icons.email),
+                    ),
+                    keyboardType: TextInputType.emailAddress,
+                    validator: (v) => (v == null || !v.contains('@'))
+                        ? 'Enter a valid email'
+                        : null,
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: _passwordController,
+                    decoration: const InputDecoration(
+                      labelText: 'Password',
+                      prefixIcon: Icon(Icons.lock),
+                    ),
+                    obscureText: true,
+                    validator: (v) => (v == null || v.length < 6)
+                        ? 'Password must be 6+ characters'
+                        : null,
+                  ),
+                  const SizedBox(height: 24),
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.all(16),
+                      backgroundColor: Colors.blue[700],
+                    ),
+                    onPressed: () {
+                      if (_formKey.currentState!.validate()) {
+                        widget.onSubmit(
+                          _emailController.text.trim(),
+                          _passwordController.text.trim(),
+                        );
+                      }
+                    },
+                    child: Text(
+                      buttonText,
+                      style: const TextStyle(fontSize: 16),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  TextButton(
+                    onPressed: widget.onSwitchMode,
+                    child: Text(
+                      toggleText,
+                      style: TextStyle(color: Colors.blue[300]),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }

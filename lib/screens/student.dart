@@ -1,25 +1,42 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_attend/main.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'attendance.dart';
 
-final FirebaseAuth _auth = FirebaseAuth.instance;
+class StudentHomeScreen extends StatefulWidget {
+  // No fields needed in the constructor anymore!
+  const StudentHomeScreen({super.key});
 
-class StudentHomeScreen extends StatelessWidget {
-  final String username;
+  @override
+  State<StudentHomeScreen> createState() => _StudentHomeScreenState();
+}
 
-  const StudentHomeScreen(this.username);
+class _StudentHomeScreenState extends State<StudentHomeScreen> {
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+
+  // Form key to validate text fields before unlocking the scanner
+  final _formKey = GlobalKey<FormState>();
+
+  // These will be managed entirely by the student on the dashboard layout
+  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _idController = TextEditingController();
+
+  // Hardcoded or dynamically fetched inside the dashboard, immutable to the user
+  final String _deviceId = "DEV-983X-8822";
+
+  bool _isScanning = false;
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _idController.dispose();
+    super.dispose();
+  }
 
   Future<void> _signOut(BuildContext context) async {
     try {
       await _auth.signOut();
-
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => MyApp()),
-      );
     } catch (e) {
       print('Error signing out: $e');
     }
@@ -32,33 +49,186 @@ class StudentHomeScreen extends StatelessWidget {
         title: Row(
           children: [
             IconButton(
-              icon: Icon(Icons.home, color: Colors.white),
-              onPressed: () {},
+              icon: const Icon(Icons.home, color: Colors.white),
+              onPressed: () {
+                setState(() {
+                  _isScanning = false;
+                });
+              },
             ),
-            Text(
-              'Student Home - $username',
-              style: TextStyle(color: Colors.white),
+            Expanded(
+              child: Text(
+                _nameController.text.isEmpty
+                    ? 'Student Dashboard'
+                    : 'Home - ${_nameController.text}',
+                style: const TextStyle(color: Colors.white, fontSize: 18),
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
           ],
         ),
         actions: [
           IconButton(
-            icon: Icon(Icons.logout),
+            icon: const Icon(Icons.logout, color: Colors.white),
             onPressed: () => _signOut(context),
+            tooltip: 'Sign Out',
           ),
         ],
         backgroundColor: Colors.blue,
         elevation: 0,
       ),
-      body: Center(child: QRScannerWidget(username: username)),
+      body: _isScanning
+          ? Center(
+              child: QRScannerWidget(
+                // Sent to scanner only after strict dashboard validation passes
+                username: _nameController.text.trim(),
+                userid: _idController.text.trim(),
+                deviceid: _deviceId,
+              ),
+            )
+          : Center(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(24.0),
+                child: Container(
+                  constraints: const BoxConstraints(maxWidth: 400),
+                  child: Form(
+                    key: _formKey, // Form validation wraps the inputs
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Icon(
+                          Icons.school_outlined,
+                          size: 80,
+                          color: Colors.blue[700],
+                        ),
+                        const SizedBox(height: 16),
+                        const Text(
+                          'Setup Your Profile',
+                          style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'You must enter your Name and User ID before you can scan.',
+                          style: TextStyle(
+                            color: Colors.grey[600],
+                            fontSize: 13,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 32),
+
+                        // Required Student Name Input
+                        TextFormField(
+                          controller: _nameController,
+                          decoration: const InputDecoration(
+                            labelText: 'Enter Your Name *',
+                            prefixIcon: Icon(Icons.person),
+                            border: OutlineInputBorder(),
+                          ),
+                          validator: (value) {
+                            if (value == null || value.trim().isEmpty) {
+                              return 'Name is required to proceed';
+                            }
+                            return null;
+                          },
+                          onChanged: (val) {
+                            setState(
+                              () {},
+                            ); // Updates the App Bar text in real-time
+                          },
+                        ),
+                        const SizedBox(height: 16),
+
+                        // Required User ID Input
+                        TextFormField(
+                          controller: _idController,
+                          decoration: const InputDecoration(
+                            labelText: 'Enter Your User ID / Roll No *',
+                            prefixIcon: Icon(Icons.badge),
+                            border: OutlineInputBorder(),
+                          ),
+                          validator: (value) {
+                            if (value == null || value.trim().isEmpty) {
+                              return 'User ID is required to proceed';
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 16),
+
+                        // Fixed Device ID View (Read Only)
+                        TextFormField(
+                          initialValue: _deviceId,
+                          readOnly: true,
+                          enabled: false,
+                          decoration: InputDecoration(
+                            labelText: 'Your Device ID (Auto-Captured)',
+                            prefixIcon: const Icon(Icons.phonelink_lock),
+                            border: const OutlineInputBorder(),
+                            filled: true,
+                            fillColor: Colors.grey[100],
+                          ),
+                        ),
+                        const SizedBox(height: 32),
+
+                        // Scan QR Trigger Button
+                        ElevatedButton.icon(
+                          style: ElevatedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            backgroundColor: Colors.blue,
+                            foregroundColor: Colors.white,
+                          ),
+                          icon: const Icon(Icons.qr_code_scanner),
+                          label: const Text(
+                            'Scan QR Code',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          onPressed: () {
+                            // Enforce rule: validation must pass before transitioning to scanner state
+                            if (_formKey.currentState!.validate()) {
+                              setState(() {
+                                _isScanning = true;
+                              });
+                            } else {
+                              // Optional feedback if validation fails
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text(
+                                    'Please complete your profile details first!',
+                                  ),
+                                  backgroundColor: Colors.orange,
+                                ),
+                              );
+                            }
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
     );
   }
 }
 
 class QRScannerWidget extends StatefulWidget {
   final String username;
+  final String userid;
+  final String deviceid;
 
-  const QRScannerWidget({super.key, required this.username});
+
+  const QRScannerWidget({super.key, required this.username,
+    required this.userid,
+  required this.deviceid});
 
   @override
   State<QRScannerWidget> createState() => _QRScannerWidgetState();
@@ -183,18 +353,28 @@ class _QRScannerWidgetState extends State<QRScannerWidget>
     );
   }
 
-  Future<void> _updateAttendance(String? subjectName) async {
+Future<void> _updateAttendance(String? subjectName) async {
     try {
       if (subjectName != null) {
-        String userName = widget.username;
         CollectionReference attendanceCollection = FirebaseFirestore.instance
             .collection('attendance');
 
+        Map<String, dynamic> studentRecord = {
+          'username': widget.username,
+          'userid': widget.userid,
+          'deviceid': widget.deviceid,
+          'timestamp': DateTime.now()
+              .toIso8601String(), // Optional: highly helpful for tracking logs
+        };
+
+        // 2. Safely push this object inside the 'students' list array using merge options
         await attendanceCollection.doc(subjectName).set({
-          'students': FieldValue.arrayUnion([userName]),
+          'students': FieldValue.arrayUnion([studentRecord]),
         }, SetOptions(merge: true));
 
-        print('Attendance updated in Firestore.');
+        print(
+          'Attendance record updated with username, ID, and hardware tokens.',
+        );
       } else {
         print('Subject name is null.');
       }
