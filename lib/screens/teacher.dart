@@ -1,115 +1,281 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'attendance_list.dart';
 import 'package:flutter_attend/main.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
-final FirebaseAuth _auth = FirebaseAuth.instance;
-
 class TeacherHomeScreen extends StatelessWidget {
+  const TeacherHomeScreen({super.key});
+
+  static const String attendanceCollection = 'attendance';
+  static const String studentsSubcollection = 'students';
+
+  Future<void> _signOut(BuildContext context) async {
+    try {
+      await FirebaseAuth.instance.signOut();
+      if (!context.mounted) return;
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const MyApp()),
+      );
+    } catch (e) {
+      debugPrint('Error signing out: $e');
+    }
+  }
+
+  Future<void> _showAddSubjectDialog(BuildContext context) async {
+    final controller = TextEditingController();
+    final formKey = GlobalKey<FormState>();
+
+    final subjectId = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('Add New Subject'),
+          content: Form(
+            key: formKey,
+            child: TextFormField(
+              controller: controller,
+              autofocus: true,
+              textCapitalization: TextCapitalization.none,
+              decoration: const InputDecoration(
+                labelText: 'Subject name',
+                hintText: 'e.g. cse101',
+              ),
+              validator: (value) {
+                if (value == null || value.trim().isEmpty) {
+                  return 'Subject name cannot be empty';
+                }
+                return null;
+              },
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                if (formKey.currentState!.validate()) {
+                  Navigator.pop(
+                    dialogContext,
+                    controller.text.trim().toLowerCase(),
+                  );
+                }
+              },
+              child: const Text('Add'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (subjectId == null || subjectId.isEmpty) return;
+    if (!context.mounted) return;
+
+    final docRef = FirebaseFirestore.instance
+        .collection(attendanceCollection)
+        .doc(subjectId);
+
+    final existing = await docRef.get();
+    if (existing.exists) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Subject "$subjectId" already exists.')),
+        );
+      }
+      return;
+    }
+
+    await docRef.set({'createdAt': Timestamp.now()});
+
+    if (context.mounted) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Subject "$subjectId" added.')));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Teacher Home'),
+        title: const Text('Teacher Dashboard'),
+        backgroundColor: Colors.blue,
         actions: [
           IconButton(
-            icon: Icon(Icons.logout),
+            icon: const Icon(Icons.logout),
             onPressed: () => _signOut(context),
           ),
         ],
       ),
-      body: _buildBody(context),
-    );
-  }
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => _showAddSubjectDialog(context),
+        icon: const Icon(Icons.add),
+        label: const Text('Add Subject'),
+      ),
+      body: StreamBuilder<QuerySnapshot>(
+        stream: FirebaseFirestore.instance
+            .collection(attendanceCollection)
+            .snapshots(),
+        builder: (context, snapshot) {
+          if (snapshot.hasError) {
+            return Center(child: Text('Error: ${snapshot.error}'));
+          }
+          if (!snapshot.hasData) {
+            return const Center(child: CircularProgressIndicator());
+          }
 
-  Future<void> _signOut(BuildContext context) async {
-    try {
-      await _auth.signOut();
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => MyApp()),
-      );
-    } catch (e) {
-      print('Error signing out: $e');
-    }
-  }
+          final docs = snapshot.data!.docs;
+          if (docs.isEmpty) {
+            return const Center(
+              child: Text('No subjects yet. Tap "Add Subject" to create one.'),
+            );
+          }
 
-  Widget _buildBody(BuildContext context) {
-    User? user = _auth.currentUser;
-
-    String? teacherEmail = user?.email;
-    String? subjectName = _extractSubjectName(teacherEmail);
-    String subject = subjectName!;
-
-    return Container(
-      padding: EdgeInsets.all(16),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Icon(Icons.school, size: 100.0, color: Colors.blue),
-          SizedBox(height: 20.0),
-          Text(
-            'Welcome, Teacher!',
-            style: TextStyle(fontSize: 24.0, fontWeight: FontWeight.bold),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) =>
-                      SubjectQRCodeScreen(subjectName: subject),
-                ),
-              );
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.blue,
-              foregroundColor: Colors.white,
+          return GridView.builder(
+            padding: const EdgeInsets.fromLTRB(12, 12, 12, 88),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 3,
+              crossAxisSpacing: 10,
+              mainAxisSpacing: 10,
+              childAspectRatio: 0.85,
             ),
-            child: Text('Generate QR code'),
-          ),
-          SizedBox(height: 20.0),
-          Expanded(child: _buildAttendanceList(context,subjectName)),
-        ],
+            itemCount: docs.length,
+            itemBuilder: (context, index) {
+              final subjectId = docs[index].id;
+              return _SubjectCard(subjectId: subjectId);
+            },
+          );
+        },
       ),
     );
   }
 }
 
-Widget _buildAttendanceList(BuildContext context, String? subjectName) {
-  if (subjectName == null) {
-    return Center(child: Text('Subject name not found.'));
-  }
-  return Container(
-    height: 450,
-    margin: const EdgeInsets.all(16),
-    padding: const EdgeInsets.all(12),
-    decoration: BoxDecoration(
-      color: Colors.grey[200], // Matches the visual display panel base
+class _SubjectCard extends StatelessWidget {
+  final String subjectId;
+
+  const _SubjectCard({required this.subjectId});
+
+  @override
+  Widget build(BuildContext context) {
+    const cardColor = Color(
+      0xFF1E3A8A,
+    ); 
+
+    return Material(
+      color: cardColor,
       borderRadius: BorderRadius.circular(12),
-      border: Border.all(color: Colors.grey[300]!),
-    ),
-    child: AttendanceList(subjectName: subjectName),
-  );
-}
-
-String? _extractSubjectName(String? email) {
-  if (email == null) return null;
-
-  List<String> parts = email.split('@');
-  if (parts.length == 2) {
-    return parts[0];
-  } else {
-    return null;
+      elevation: 2,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => SubjectAttendanceScreen(subjectId: subjectId),
+            ),
+          );
+        },
+        onLongPress: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => SubjectQRCodeScreen(subjectName: subjectId),
+            ),
+          );
+        },
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                subjectId.toUpperCase(),
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+              const SizedBox(height: 6),
+              _AttendanceCountBadge(subjectId: subjectId),
+              const SizedBox(height: 6),
+              IconButton(
+                visualDensity: VisualDensity.compact,
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+                icon: const Icon(
+                  Icons.qr_code,
+                  size: 18,
+                  color: Colors.white70,
+                ),
+                tooltip: 'Generate QR',
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) =>
+                          SubjectQRCodeScreen(subjectName: subjectId),
+                    ),
+                  );
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
 
+class _AttendanceCountBadge extends StatelessWidget {
+  final String subjectId;
+
+  const _AttendanceCountBadge({required this.subjectId});
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection(TeacherHomeScreen.attendanceCollection)
+          .doc(subjectId)
+          .collection(TeacherHomeScreen.studentsSubcollection)
+          .snapshots(),
+      builder: (context, snapshot) {
+        final count = snapshot.data?.docs.length ?? 0;
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+          decoration: BoxDecoration(
+            color: count > 0
+                ? Colors.greenAccent.withOpacity(0.9)
+                : Colors.white.withOpacity(0.15),
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Text(
+            '$count attended',
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: count > 0 ? Colors.black87 : Colors.white70,
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
 class SubjectQRCodeScreen extends StatelessWidget {
   final String subjectName;
 
-  const SubjectQRCodeScreen({super.key,this.subjectName="cse"});
+  const SubjectQRCodeScreen({super.key, this.subjectName = "cse"});
 
   @override
   Widget build(BuildContext context) {
@@ -154,10 +320,9 @@ class SubjectQRCodeScreen extends StatelessWidget {
                 ],
               ),
               child: QrImageView(
-                data: qrData, 
+                data: qrData,
                 version: QrVersions.auto,
-                size:
-                    250.0,
+                size: 250.0,
                 gapless: false,
                 embeddedImageStyle: const QrEmbeddedImageStyle(
                   size: Size(40, 40),

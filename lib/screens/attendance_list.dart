@@ -1,118 +1,130 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'teacher.dart';
 
+class SubjectAttendanceScreen extends StatelessWidget {
+  final String subjectId;
 
-class AttendanceList extends StatelessWidget {
-
-  final String subjectName;
-
-  const AttendanceList({required this.subjectName});
+  const SubjectAttendanceScreen({super.key, required this.subjectId});
 
   @override
   Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('${subjectId.toUpperCase()} Attendance'),
+        backgroundColor: Colors.blue,
+      ),
+      body: StreamBuilder<QuerySnapshot>(
+        stream: FirebaseFirestore.instance
+            .collection(TeacherHomeScreen.attendanceCollection)
+            .doc(subjectId)
+            .collection(TeacherHomeScreen.studentsSubcollection)
+            .orderBy('timestamp', descending: true)
+            .snapshots(),
+        builder: (context, snapshot) {
+          if (snapshot.hasError) {
+            return Center(child: Text('Error: ${snapshot.error}'));
+          }
+          if (!snapshot.hasData) {
+            return const Center(child: CircularProgressIndicator());
+          }
 
-    DateTime currentDate=DateTime.now();
+          final docs = snapshot.data!.docs;
+          if (docs.isEmpty) {
+            return const Center(child: Text('No students have attended yet.'));
+          }
 
+          return ListView.separated(
+            padding: const EdgeInsets.all(16),
+            itemCount: docs.length,
+            separatorBuilder: (_, __) => const SizedBox(height: 10),
+            itemBuilder: (context, index) {
+              final data = docs[index].data() as Map<String, dynamic>;
 
-    return StreamBuilder(stream: FirebaseFirestore.instance
-          .collection('attendance')
-          .doc(subjectName.toLowerCase().trim())
-          .snapshots(),
-           builder: (context,AsyncSnapshot<DocumentSnapshot>snapshot ){
-            if (snapshot.hasError) {
-          return Center(child: Text('Error: ${snapshot.error}'));
-        }
-              if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(
-            child: CircularProgressIndicator(),
-          );
-        }
+              final username = (data['username'] ?? '—').toString();
+              final userid = (data['userid'] ?? '—').toString();
+              final deviceid = (data['deviceid'] ?? '—').toString();
+              final timestampRaw = data['timestamp']?.toString();
+              final formattedTime = _formatTimestamp(timestampRaw);
 
-       if (!snapshot.hasData || !snapshot.data!.exists) {
-          return Center(
-            child: Text(
-              'No attendance record found for "${subjectName.toLowerCase()}"',
-              style: const TextStyle(color: Colors.grey),
-            ),
-          );
-        }
-
-        final data = snapshot.data!.data() as Map<String, dynamic>?;
-        final List<dynamic> students =
-            data?['students'] as List<dynamic>? ?? [];
-
-            if (students.isEmpty) {
-          return const Center(
-            child: Text(
-              'Nobody has checked in yet.',
-              style: TextStyle(color: Colors.grey),
-            ),
-          );
-        }
-
-        return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-          children: [
-            Padding(padding: EdgeInsets.all(4),
-            child:Text(
-                'Attended Students for $subjectName',
-              style:TextStyle(
-                fontSize: 10,
-                fontWeight: FontWeight.bold,
-                color: Colors.black87,
-              ),
-
-            ),
-            ),
-              Padding(padding: EdgeInsets.all(4),
-            child:Text(
-                'Date: ${_formatDate(currentDate)}',
-              style:TextStyle(
-                fontSize: 14,
-                  color: Colors.black54,
-              ),
-
-            ),
-            ),
-            const Divider(),
-            Expanded(
-              child:ListView.builder(
-                itemCount: students.length,
-                itemBuilder: (context, index) {
-                  return Container(
-                    margin: EdgeInsets.only(bottom:4),
-                    child: ListTile(
-                      dense: true,
-                      visualDensity: VisualDensity(horizontal:0,vertical:-4),
-                      contentPadding: EdgeInsets.symmetric(
-                        vertical: 0,
-                        horizontal:8,
+              return Card(
+                elevation: 2,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(14),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.person,
+                            size: 20,
+                            color: Colors.blue,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              username,
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
-                      title: Text(
-                        '${index + 1}. ${students?[index] ?? ''}',
-                       style: TextStyle(
-                          fontSize: 16.0,
-                          color: Colors.black,
-                        ),
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
-          ],
-        );
-           },
-           );
+                      const SizedBox(height: 8),
+                      _InfoRow(label: 'User ID', value: userid),
+                      _InfoRow(label: 'Device ID', value: deviceid),
+                      _InfoRow(label: 'Time', value: formattedTime),
+                    ],
+                  ),
+                ),
+              );
+            },
+          );
+        },
+      ),
+    );
   }
 
-  String _formatDate(DateTime date){
-    return '${date.year}-${_twoDigits(date.month)}-${_twoDigits(date.day)}';
-
+  String _formatTimestamp(String? isoString) {
+    if (isoString == null) return '—';
+    final parsed = DateTime.tryParse(isoString);
+    if (parsed == null) return isoString;
+    final local = parsed.toLocal();
+    String two(int n) => n.toString().padLeft(2, '0');
+    return '${local.year}-${two(local.month)}-${two(local.day)} '
+        '${two(local.hour)}:${two(local.minute)}:${two(local.second)}';
   }
-   String _twoDigits(int n) {
-    if (n >= 10) return '$n';
-    return '0$n';
+}
+
+class _InfoRow extends StatelessWidget {
+  final String label;
+  final String value;
+
+  const _InfoRow({required this.label, required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 80,
+            child: Text(
+              label,
+              style: const TextStyle(fontSize: 13, color: Colors.grey),
+            ),
+          ),
+          Expanded(child: Text(value, style: const TextStyle(fontSize: 13))),
+        ],
+      ),
+    );
   }
 }

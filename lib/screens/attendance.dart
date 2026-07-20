@@ -20,7 +20,7 @@ class AttendanceConfirmationScreen extends StatelessWidget {
             Navigator.pushReplacement(
               context,
               MaterialPageRoute(
-                builder: (context) => StudentHomeScreen(username),
+                builder: (context) => StudentHomeScreen(),
               ),
             );
           },
