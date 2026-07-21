@@ -44,7 +44,7 @@ class AttendanceConfirmationScreen extends StatelessWidget {
             ),
             SizedBox(height: 8.0),
             Text(
-              'subjectName',
+              subjectName,
               style: TextStyle(
                 fontSize: 24.0,
                 fontWeight: FontWeight.bold,

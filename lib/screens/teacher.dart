@@ -162,9 +162,7 @@ class _SubjectCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const cardColor = Color(
-      0xFF1E3A8A,
-    ); 
+    const cardColor = Color(0xFF1E3A8A);
 
     return Material(
       color: cardColor,
@@ -243,14 +241,16 @@ class _AttendanceCountBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder<QuerySnapshot>(
+    return StreamBuilder<DocumentSnapshot>(
       stream: FirebaseFirestore.instance
           .collection(TeacherHomeScreen.attendanceCollection)
           .doc(subjectId)
-          .collection(TeacherHomeScreen.studentsSubcollection)
           .snapshots(),
       builder: (context, snapshot) {
-        final count = snapshot.data?.docs.length ?? 0;
+        final data = snapshot.data?.data() as Map<String, dynamic>?;
+        final rawStudents = data?['students'];
+        final count = rawStudents is List ? rawStudents.length : 0;
+
         return Container(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
           decoration: BoxDecoration(
@@ -272,6 +272,7 @@ class _AttendanceCountBadge extends StatelessWidget {
     );
   }
 }
+
 class SubjectQRCodeScreen extends StatelessWidget {
   final String subjectName;
 
@@ -295,7 +296,7 @@ class SubjectQRCodeScreen extends StatelessWidget {
               style: TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
-                color: Colors.white10,
+                color: Colors.white,
               ),
             ),
             const SizedBox(height: 10),

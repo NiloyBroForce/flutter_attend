@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "508876084635",
+    "firebase_url": "https://flutter-c53aa-default-rtdb.firebaseio.com",
+    "project_id": "flutter-c53aa",
+    "storage_bucket": "flutter-c53aa.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:508876084635:android:0bc3f1c9d0bcdbf7e5fd3e",
+        "android_client_info": {
+          "package_name": "com.niloy.demo"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "508876084635-8tl72u8u503mmpda0on3folt9s78m77a.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.niloy.demo",
+            "certificate_hash": "f53a244caea933447d154ff06950e64f7ffa62ec"
+          }
+        },
+        {
+          "client_id": "508876084635-0d4188u640du41mlj0h3s723fn7eudct.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDbqAvRHtHdS-b24U-3xSIPY7nKejo9HM8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "508876084635-0d4188u640du41mlj0h3s723fn7eudct.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

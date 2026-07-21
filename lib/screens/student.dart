@@ -1,11 +1,13 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:device_info_plus/device_info_plus.dart';
 import 'attendance.dart';
 
+
 class StudentHomeScreen extends StatefulWidget {
-  // No fields needed in the constructor anymore!
   const StudentHomeScreen({super.key});
 
   @override
@@ -15,36 +17,59 @@ class StudentHomeScreen extends StatefulWidget {
 class _StudentHomeScreenState extends State<StudentHomeScreen> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
-  // Form key to validate text fields before unlocking the scanner
-  final _formKey = GlobalKey<FormState>();
-
-  // These will be managed entirely by the student on the dashboard layout
-  final TextEditingController _nameController = TextEditingController();
-  final TextEditingController _idController = TextEditingController();
-
-  // Hardcoded or dynamically fetched inside the dashboard, immutable to the user
-  final String _deviceId = "DEV-983X-8822";
-
   bool _isScanning = false;
+  String _deviceId = 'Fetching...';
 
   @override
-  void dispose() {
-    _nameController.dispose();
-    _idController.dispose();
-    super.dispose();
+  void initState() {
+    super.initState();
+    _fetchDeviceId();
+  }
+
+  // Get platform-specific unique hardware identity
+  Future<void> _fetchDeviceId() async {
+    final DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
+    String id = 'DEV-UNKNOWN';
+
+    try {
+      if (Platform.isAndroid) {
+        final androidInfo = await deviceInfo.androidInfo;
+        id = androidInfo.id; // e.g., "TP1A.220624.014"
+      } else if (Platform.isIOS) {
+        final iosInfo = await deviceInfo.iosInfo;
+        id = iosInfo.identifierForVendor ?? 'IOS-UNKNOWN';
+      }
+    } catch (e) {
+      id = 'DEV-983X-8822'; // fallback fallback
+    }
+
+    if (mounted) {
+      setState(() {
+        _deviceId = id;
+      });
+    }
   }
 
   Future<void> _signOut(BuildContext context) async {
     try {
       await _auth.signOut();
     } catch (e) {
-      print('Error signing out: $e');
+      debugPrint('Error signing out: $e');
     }
   }
 
-  @override
+@override
   Widget build(BuildContext context) {
+    final User? currentUser = _auth.currentUser;
+    final String email = currentUser?.email ?? '';
+
+    final String userId = email.contains('@') ? email.split('@')[0] : email;
+    final String username =
+        currentUser?.displayName ?? (currentUser?.email ?? 'Student User');
+
     return Scaffold(
+      // 1. Deep Dark Background
+      backgroundColor: const Color(0xFF0F172A), // Slate Dark / Near Black
       appBar: AppBar(
         title: Row(
           children: [
@@ -56,12 +81,14 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                 });
               },
             ),
-            Expanded(
+            const Expanded(
               child: Text(
-                _nameController.text.isEmpty
-                    ? 'Student Dashboard'
-                    : 'Home - ${_nameController.text}',
-                style: const TextStyle(color: Colors.white, fontSize: 18),
+                'Student Dashboard',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
                 overflow: TextOverflow.ellipsis,
               ),
             ),
@@ -74,147 +101,178 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
             tooltip: 'Sign Out',
           ),
         ],
-        backgroundColor: Colors.blue,
+        backgroundColor: const Color(0xFF1E293B), // Dark Navy Surface
         elevation: 0,
       ),
       body: _isScanning
           ? Center(
               child: QRScannerWidget(
-                // Sent to scanner only after strict dashboard validation passes
-                username: _nameController.text.trim(),
-                userid: _idController.text.trim(),
+                username: username,
+                userid: userId,
                 deviceid: _deviceId,
               ),
             )
-          : Center(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(24.0),
+          : SingleChildScrollView(
+              padding: const EdgeInsets.all(24.0),
+              child: Center(
                 child: Container(
                   constraints: const BoxConstraints(maxWidth: 400),
-                  child: Form(
-                    key: _formKey, // Form validation wraps the inputs
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Icon(
-                          Icons.school_outlined,
-                          size: 80,
-                          color: Colors.blue[700],
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      // Header Icon with Glow effect
+                      Center(
+                        child: Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.blueAccent.withOpacity(0.15),
+                          ),
+                          child: const Icon(
+                            Icons.verified_user_rounded,
+                            size: 64,
+                            color: Color(0xFF38BDF8), // Bright Sky Blue
+                          ),
                         ),
-                        const SizedBox(height: 16),
-                        const Text(
-                          'Setup Your Profile',
+                      ),
+                      const SizedBox(height: 16),
+                      const Text(
+                        'Student Details',
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white, // Crisp White Title
+                          letterSpacing: 0.5,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 28),
+
+                      // Cards with High Contrast Text
+                      _buildProfileCard(
+                        icon: Icons.person_rounded,
+                        label: 'Student Name',
+                        value: username,
+                      ),
+                      const SizedBox(height: 14),
+
+                      _buildProfileCard(
+                        icon: Icons.badge_rounded,
+                        label: 'Reg ID / User ID',
+                        value: userId,
+                      ),
+                      const SizedBox(height: 14),
+
+                      _buildProfileCard(
+                        icon: Icons.phonelink_lock_rounded,
+                        label: 'Device Hardware ID',
+                        value: _deviceId,
+                      ),
+                      const SizedBox(height: 36),
+
+                      // Electric Blue Action Button
+                      ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          backgroundColor: const Color(
+                            0xFF2563EB,
+                          ), // Vibrant Blue
+                          foregroundColor: Colors.white,
+                          elevation: 4,
+                          shadowColor: Colors.blueAccent.withOpacity(0.5),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                        ),
+                        icon: const Icon(
+                          Icons.qr_code_scanner_rounded,
+                          size: 22,
+                        ),
+                        label: const Text(
+                          'Scan QR Code',
                           style: TextStyle(
-                            fontSize: 24,
+                            fontSize: 16,
                             fontWeight: FontWeight.bold,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'You must enter your Name and Reg No before you can scan.',
-                          style: TextStyle(
-                            color: Colors.grey[600],
-                            fontSize: 13,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: 32),
-
-                        // Required Student Name Input
-                        TextFormField(
-                          controller: _nameController,
-                          decoration: const InputDecoration(
-                            labelText: 'Enter Your Name *',
-                            prefixIcon: Icon(Icons.person),
-                            border: OutlineInputBorder(),
-                          ),
-                          validator: (value) {
-                            if (value == null || value.trim().isEmpty) {
-                              return 'Name is required to proceed';
-                            }
-                            return null;
-                          },
-                          onChanged: (val) {
-                            setState(
-                              () {},
-                            ); // Updates the App Bar text in real-time
-                          },
-                        ),
-                        const SizedBox(height: 16),
-
-                        // Required User ID Input
-                        TextFormField(
-                          controller: _idController,
-                          decoration: const InputDecoration(
-                            labelText: 'Enter Your Reg No *',
-                            prefixIcon: Icon(Icons.badge),
-                            border: OutlineInputBorder(),
-                          ),
-                          validator: (value) {
-                            if (value == null || value.trim().isEmpty) {
-                              return 'User ID is required to proceed';
-                            }
-                            return null;
-                          },
-                        ),
-                        const SizedBox(height: 16),
-
-                        // Fixed Device ID View (Read Only)
-                        TextFormField(
-                          initialValue: _deviceId,
-                          readOnly: true,
-                          enabled: false,
-                          decoration: InputDecoration(
-                            labelText: 'Your Device ID (Auto-Captured)',
-                            prefixIcon: const Icon(Icons.phonelink_lock),
-                            border: const OutlineInputBorder(),
-                            filled: true,
-                            fillColor: Colors.grey[100],
+                            letterSpacing: 0.5,
                           ),
                         ),
-                        const SizedBox(height: 32),
-
-                        // Scan QR Trigger Button
-                        ElevatedButton.icon(
-                          style: ElevatedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            backgroundColor: Colors.blue,
-                            foregroundColor: Colors.white,
-                          ),
-                          label: const Text(
-                            'Scan QR Code',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          onPressed: () {
-                            // Enforce rule: validation must pass before transitioning to scanner state
-                            if (_formKey.currentState!.validate()) {
-                              setState(() {
-                                _isScanning = true;
-                              });
-                            } else {
-                              // Optional feedback if validation fails
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text(
-                                    'Please complete your profile details first!',
-                                  ),
-                                  backgroundColor: Colors.orange,
-                                ),
-                              );
-                            }
-                          },
-                        ),
-                      ],
-                    ),
+                        onPressed: () {
+                          setState(() {
+                            _isScanning = true;
+                          });
+                        },
+                      ),
+                    ],
                   ),
                 ),
               ),
             ),
+    );
+  }
+
+  /// Refactored Profile Card Widget
+  Widget _buildProfileCard({
+    required IconData icon,
+    required String label,
+    required String value,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1E293B), // Dark surface container
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: const Color(0xFF334155), // Subtle border outline
+          width: 1.2,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.25),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          // Icon Container with Cyan/Blue Tint
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: const Color(0xFF0284C7).withOpacity(0.15),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(icon, color: const Color(0xFF38BDF8), size: 24),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                    color: Color(0xFF94A3B8), // Soft Light Slate Label
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  value,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white, // Pure High-Contrast White Text
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -224,10 +282,12 @@ class QRScannerWidget extends StatefulWidget {
   final String userid;
   final String deviceid;
 
-
-  const QRScannerWidget({super.key, required this.username,
+  const QRScannerWidget({
+    super.key,
+    required this.username,
     required this.userid,
-  required this.deviceid});
+    required this.deviceid,
+  });
 
   @override
   State<QRScannerWidget> createState() => _QRScannerWidgetState();
@@ -352,33 +412,28 @@ class _QRScannerWidgetState extends State<QRScannerWidget>
     );
   }
 
-Future<void> _updateAttendance(String? subjectName) async {
+  Future<void> _updateAttendance(String? subjectName) async {
     try {
       if (subjectName != null) {
-        CollectionReference attendanceCollection = FirebaseFirestore.instance
-            .collection('attendance');
+        CollectionReference attendanceCollection =
+            FirebaseFirestore.instance.collection('attendance');
 
         Map<String, dynamic> studentRecord = {
           'username': widget.username,
           'userid': widget.userid,
           'deviceid': widget.deviceid,
-          'timestamp': DateTime.now()
-              .toIso8601String(), // Optional: highly helpful for tracking logs
+          'timestamp': DateTime.now().toIso8601String(),
         };
 
-        // 2. Safely push this object inside the 'students' list array using merge options
+        // Write student payload to array inside subject doc
         await attendanceCollection.doc(subjectName).set({
           'students': FieldValue.arrayUnion([studentRecord]),
         }, SetOptions(merge: true));
 
-        print(
-          'Attendance record updated with username, ID, and hardware tokens.',
-        );
-      } else {
-        print('Subject name is null.');
+        debugPrint('Attendance record updated with hardware tokens.');
       }
     } catch (e) {
-      print('Error updating attendance: $e');
+      debugPrint('Error updating attendance: $e');
     }
   }
 

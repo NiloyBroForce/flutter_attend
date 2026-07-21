@@ -14,12 +14,10 @@ class SubjectAttendanceScreen extends StatelessWidget {
         title: Text('${subjectId.toUpperCase()} Attendance'),
         backgroundColor: Colors.blue,
       ),
-      body: StreamBuilder<QuerySnapshot>(
+      body: StreamBuilder<DocumentSnapshot>(
         stream: FirebaseFirestore.instance
             .collection(TeacherHomeScreen.attendanceCollection)
             .doc(subjectId)
-            .collection(TeacherHomeScreen.studentsSubcollection)
-            .orderBy('timestamp', descending: true)
             .snapshots(),
         builder: (context, snapshot) {
           if (snapshot.hasError) {
@@ -28,23 +26,44 @@ class SubjectAttendanceScreen extends StatelessWidget {
           if (!snapshot.hasData) {
             return const Center(child: CircularProgressIndicator());
           }
+          if (!snapshot.data!.exists) {
+            return const Center(child: Text('Subject not found.'));
+          }
 
-          final docs = snapshot.data!.docs;
-          if (docs.isEmpty) {
+          final data = snapshot.data!.data() as Map<String, dynamic>? ?? {};
+          final rawStudents = data['students'];
+
+          // "students" is stored as an ARRAY of maps on the subject document
+          // (not a subcollection) — e.g. arrayUnion({...}) from the student side.
+          final students = <Map<String, dynamic>>[
+            if (rawStudents is List)
+              ...rawStudents.whereType<Map>().map(
+                    (m) => m.map((k, v) => MapEntry(k.toString(), v)),
+                  ),
+          ];
+
+          // Newest first. ISO 8601 timestamps sort correctly as plain strings.
+          students.sort((a, b) {
+            final aTime = (a['timestamp'] ?? '').toString();
+            final bTime = (b['timestamp'] ?? '').toString();
+            return bTime.compareTo(aTime);
+          });
+
+          if (students.isEmpty) {
             return const Center(child: Text('No students have attended yet.'));
           }
 
           return ListView.separated(
             padding: const EdgeInsets.all(16),
-            itemCount: docs.length,
+            itemCount: students.length,
             separatorBuilder: (_, __) => const SizedBox(height: 10),
             itemBuilder: (context, index) {
-              final data = docs[index].data() as Map<String, dynamic>;
+              final entry = students[index];
 
-              final username = (data['username'] ?? '—').toString();
-              final userid = (data['userid'] ?? '—').toString();
-              final deviceid = (data['deviceid'] ?? '—').toString();
-              final timestampRaw = data['timestamp']?.toString();
+              final username = (entry['username'] ?? '—').toString();
+              final userid = (entry['userid'] ?? '—').toString();
+              final deviceid = (entry['deviceid'] ?? '—').toString();
+              final timestampRaw = entry['timestamp']?.toString();
               final formattedTime = _formatTimestamp(timestampRaw);
 
               return Card(

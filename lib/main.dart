@@ -67,49 +67,35 @@ Future<void> _signUp(String email, String password) async {
   }
 }
 @override
+@override
 Widget build(BuildContext context) {
-    return StreamBuilder<User?>(
-      stream: _auth.authStateChanges(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Scaffold(
-            body: Center(child: CircularProgressIndicator()),
-          );
+  return StreamBuilder<User?>(
+    stream: _auth.authStateChanges(),
+    builder: (context, snapshot) {
+      if (snapshot.connectionState == ConnectionState.waiting) {
+        return const Scaffold(
+          backgroundColor: Color(0xFF0F172A),
+          body: Center(child: CircularProgressIndicator()),
+        );
+      }
+
+      if (snapshot.hasData && snapshot.data != null) {
+        final email = (snapshot.data!.email ?? '').toLowerCase().trim();
+        final emailParts = email.split('@');
+        final domain = emailParts.length > 1 ? emailParts[1] : '';
+
+        if (domain == 'student.sust.edu') {
+          return const StudentHomeScreen();
+        } else if (domain.contains('sust')) {
+          return const TeacherHomeScreen();
         }
+      }
 
-        if (snapshot.hasData && snapshot.data != null) {
-          final user = snapshot.data!;
-          final email = user.email ?? '';
-
-          if (email.endsWith('@student.com')) {
-            return StudentHomeScreen();
-          } else if (email.endsWith('@teacher.com')) {
-            return TeacherHomeScreen();
-          }
-
-          return const Scaffold(
-            body: Center(child: Text('Unauthorized role pattern.')),
-          );
-        }
-
-        if (_isShowingSignUpPage) {
-          return AuthFormScreen(
-            isSignUpMode: true,
-            onSwitchMode: () => setState(() => _isShowingSignUpPage = false),
-            onSubmit: (email, password) =>
-                _signUp(email, password), 
-          );
-        } else {
-          return AuthFormScreen(
-            isSignUpMode: false,
-            onSwitchMode: () => setState(() => _isShowingSignUpPage = true),
-            onSubmit: (email, password) =>
-                _signIn(email, password), 
-          );
-        }
-      },
-    );
-  }
+      // If user is not logged in (or was kicked out due to invalid email), stay on Login Page
+      return LoginPage(); 
+    },
+  );
+}
 }
 class AuthFormScreen extends StatefulWidget {
   final bool isSignUpMode;
