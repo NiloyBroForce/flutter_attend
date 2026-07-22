@@ -1,15 +1,26 @@
+import 'dart:async';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'firebase_options.dart';
 import 'screens/teacher.dart';
 import 'screens/student.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-    await Firebase.initializeApp(
-      options: DefaultFirebaseOptions.currentPlatform,
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
+  // Initialize Google Sign-In once at startup
+  try {
+    await GoogleSignIn.instance.initialize(
+      serverClientId:
+          '508876084635-0d4188u640du41mlj0h3s723fn7eudct.apps.googleusercontent.com',
     );
+  } catch (e) {
+    debugPrint("GoogleSignIn init error: $e");
+  }
+
   runApp(const MyApp());
 }
 
@@ -20,93 +31,191 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Android Attendance',
-      theme: ThemeData(
-        brightness: Brightness.dark,
-        primarySwatch: Colors.blue,
-      ),
-      home: LoginPage(),
+      theme: ThemeData(brightness: Brightness.dark, primarySwatch: Colors.blue),
+      home: const AuthGate(),
       debugShowCheckedModeBanner: false,
     );
   }
 }
 
-class LoginPage extends StatefulWidget{
+class AuthGate extends StatelessWidget {
+  const AuthGate({super.key});
+
   @override
-  _LoginPageState createState()=>_LoginPageState();
-}
+  Widget build(BuildContext context) {
+    return StreamBuilder<User?>(
+      stream: FirebaseAuth.instance.authStateChanges(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Scaffold(
+            backgroundColor: Color(0xFF0F172A),
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
 
-class _LoginPageState extends State<LoginPage>{
+        if (snapshot.hasData && snapshot.data != null) {
+          final email = (snapshot.data!.email ?? '').toLowerCase().trim();
+          final emailParts = email.split('@');
+          final domain = emailParts.length > 1 ? emailParts[1] : '';
 
-final FirebaseAuth _auth=FirebaseAuth.instance;
+          if (domain == 'student.sust.edu') {
+            return const StudentHomeScreen();
+          } else if (domain.contains('sust')) {
+            return const TeacherHomeScreen();
+          }
+        }
 
-  bool _isShowingSignUpPage = false;
-
-  Future<void> signOutUser() async {
-    await _auth.signOut();
-  }
-
-Future<void> _signIn(String email, String password) async {
-  try {
-    await _auth.signInWithEmailAndPassword(
-      email: email,
-      password: password,
+        return const LoginPage();
+      },
     );
-  } catch (e) {
-    print('Error signing in: $e');
-  }  
-}
-
-Future<void> _signUp(String email, String password) async {
-  try {
-    await _auth.createUserWithEmailAndPassword(
-      email: email,
-      password: password,
-    );
-  } catch (e) {
-    print('Error signing up: $e');
   }
 }
-@override
-@override
-Widget build(BuildContext context) {
-  return StreamBuilder<User?>(
-    stream: _auth.authStateChanges(),
-    builder: (context, snapshot) {
-      if (snapshot.connectionState == ConnectionState.waiting) {
-        return const Scaffold(
-          backgroundColor: Color(0xFF0F172A),
-          body: Center(child: CircularProgressIndicator()),
+
+class LoginPage extends StatefulWidget {
+  const LoginPage({super.key});
+
+  @override
+  State<LoginPage> createState() => _LoginPageState();
+}
+
+class _LoginPageState extends State<LoginPage> {
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  bool _isSignUpMode = false;
+  bool _isLoading = false;
+
+  void _showSnackBar(String text) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          text,
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        backgroundColor: const Color(0xFFEF4444),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        duration: const Duration(seconds: 4),
+      ),
+    );
+  }
+
+  Future<void> _handleSubmit(String email, String password) async {
+    setState(() => _isLoading = true);
+    try {
+      if (_isSignUpMode) {
+        await _auth.createUserWithEmailAndPassword(
+          email: email.trim(),
+          password: password,
+        );
+      } else {
+        await _auth.signInWithEmailAndPassword(
+          email: email.trim(),
+          password: password,
         );
       }
 
-      if (snapshot.hasData && snapshot.data != null) {
-        final email = (snapshot.data!.email ?? '').toLowerCase().trim();
-        final emailParts = email.split('@');
-        final domain = emailParts.length > 1 ? emailParts[1] : '';
+      final currentUser = _auth.currentUser;
+      if (currentUser != null) {
+        final userEmail = (currentUser.email ?? '').toLowerCase().trim();
+        final domain = userEmail.contains('@') ? userEmail.split('@')[1] : '';
 
-        if (domain == 'student.sust.edu') {
-          return const StudentHomeScreen();
-        } else if (domain.contains('sust')) {
-          return const TeacherHomeScreen();
+        final isStudent = domain == 'student.sust.edu';
+        final isTeacher = domain.contains('sust');
+
+        if (!isStudent && !isTeacher) {
+          await _auth.signOut();
+          _showSnackBar(
+            'Access Denied: "$userEmail" is not an official SUST email.',
+          );
         }
       }
+    } catch (e) {
+      _showSnackBar('Authentication failed: ${e.toString()}');
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
 
-      // If user is not logged in (or was kicked out due to invalid email), stay on Login Page
-      return LoginPage(); 
-    },
-  );
+  // Android Google Sign-In
+  Future<void> _handleAndroidGoogleSignIn() async {
+    setState(() => _isLoading = true);
+    try {
+      final googleSignIn = GoogleSignIn.instance;
+
+      final GoogleSignInAccount? googleUser = await googleSignIn.authenticate();
+      if (googleUser == null) {
+        setState(() => _isLoading = false);
+        return;
+      }
+
+      final clientAuth = await googleUser.authorizationClient.authorizeScopes([
+        'email',
+        'profile',
+      ]);
+
+      final OAuthCredential credential = GoogleAuthProvider.credential(
+        idToken: googleUser.authentication.idToken,
+        accessToken: clientAuth.accessToken,
+      );
+
+      final UserCredential userCredential = await _auth.signInWithCredential(
+        credential,
+      );
+      final User? user = userCredential.user;
+
+      if (user != null) {
+        final userEmail = (user.email ?? '').toLowerCase().trim();
+        final domain = userEmail.contains('@') ? userEmail.split('@')[1] : '';
+
+        final isStudent = domain == 'student.sust.edu';
+        final isTeacher = domain.contains('sust');
+
+        if (!isStudent && !isTeacher) {
+          await _auth.signOut();
+          await googleSignIn.signOut();
+          _showSnackBar(
+            'Access Denied: "$userEmail" is not an official SUST email.',
+          );
+        }
+      }
+    } catch (e) {
+      _showSnackBar('Google Sign-In failed: $e');
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AuthFormScreen(
+      isSignUpMode: _isSignUpMode,
+      isLoading: _isLoading,
+      onSwitchMode: () {
+        setState(() => _isSignUpMode = !_isSignUpMode);
+      },
+      onSubmit: _handleSubmit,
+      onAndroidGoogleSignIn: _handleAndroidGoogleSignIn,
+    );
+  }
 }
-}
+
 class AuthFormScreen extends StatefulWidget {
   final bool isSignUpMode;
+  final bool isLoading;
   final VoidCallback onSwitchMode;
   final Function(String email, String password) onSubmit;
+  final VoidCallback onAndroidGoogleSignIn;
 
   const AuthFormScreen({
     super.key,
     required this.isSignUpMode,
+    required this.isLoading,
     required this.onSwitchMode,
     required this.onSubmit,
+    required this.onAndroidGoogleSignIn,
   });
 
   @override
@@ -185,19 +294,51 @@ class _AuthFormScreenState extends State<AuthFormScreen> {
                       padding: const EdgeInsets.all(16),
                       backgroundColor: Colors.blue[700],
                     ),
-                    onPressed: () {
-                      if (_formKey.currentState!.validate()) {
-                        widget.onSubmit(
-                          _emailController.text.trim(),
-                          _passwordController.text.trim(),
-                        );
-                      }
-                    },
-                    child: Text(
-                      buttonText,
-                      style: const TextStyle(fontSize: 16),
-                    ),
+                    onPressed: widget.isLoading
+                        ? null
+                        : () {
+                            if (_formKey.currentState!.validate()) {
+                              widget.onSubmit(
+                                _emailController.text.trim(),
+                                _passwordController.text.trim(),
+                              );
+                            }
+                          },
+                    child: widget.isLoading
+                        ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : Text(
+                            buttonText,
+                            style: const TextStyle(
+                              fontSize: 16,
+                              color: Colors.white,
+                            ),
+                          ),
                   ),
+                  const SizedBox(height: 12),
+
+                  // Android Google Sign-In Button
+                  OutlinedButton.icon(
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.all(16),
+                    ),
+                    icon: const Icon(
+                      Icons.g_mobiledata,
+                      size: 28,
+                      color: Colors.red,
+                    ),
+                    label: const Text(
+                      'Sign in with Google',
+                      style: TextStyle(fontSize: 16, color: Colors.white),
+                    ),
+                    onPressed: widget.isLoading
+                        ? null
+                        : widget.onAndroidGoogleSignIn,
+                  ),
+
                   const SizedBox(height: 16),
                   TextButton(
                     onPressed: widget.onSwitchMode,

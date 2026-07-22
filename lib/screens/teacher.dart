@@ -206,16 +206,20 @@ class _SubjectCard extends StatelessWidget {
               const SizedBox(height: 6),
               _AttendanceCountBadge(subjectId: subjectId),
               const SizedBox(height: 6),
-              IconButton(
-                visualDensity: VisualDensity.compact,
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(),
-                icon: const Icon(
-                  Icons.qr_code,
-                  size: 18,
-                  color: Colors.white70,
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.blueAccent,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
+                  ),
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
                 ),
-                tooltip: 'Generate QR',
                 onPressed: () {
                   Navigator.push(
                     context,
@@ -225,8 +229,12 @@ class _SubjectCard extends StatelessWidget {
                     ),
                   );
                 },
+                child: const Text(
+                  'Generate QR code',
+                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
+                ),
               ),
-            ],
+          ],
           ),
         ),
       ),

@@ -73,14 +73,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
       appBar: AppBar(
         title: Row(
           children: [
-            IconButton(
-              icon: const Icon(Icons.home, color: Colors.white),
-              onPressed: () {
-                setState(() {
-                  _isScanning = false;
-                });
-              },
-            ),
+            
             const Expanded(
               child: Text(
                 'Student Dashboard',
@@ -335,6 +328,24 @@ class _QRScannerWidgetState extends State<QRScannerWidget>
               fontSize: 24,
               fontWeight: FontWeight.bold,
               color: Colors.lightBlue,
+            ),
+          ),
+        ),
+        Positioned(
+          top: 40,
+          left: 16,
+          child: CircleAvatar(
+            backgroundColor: Colors.black54,
+            child: IconButton(
+              icon: const Icon(Icons.arrow_back, color: Colors.white),
+              onPressed: () {
+                // Calls parent setState to turn off scanning view
+                final homeState = context
+                    .findAncestorStateOfType<_StudentHomeScreenState>();
+                homeState?.setState(() {
+                  homeState._isScanning = false;
+                });
+              },
             ),
           ),
         ),
