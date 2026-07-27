@@ -1,6 +1,9 @@
 # flutter_attend
 Flutter mobile app for tracking attendance of students
 
+# PR required for merging into main
+If you are a collaborator, please create a new branch and update it with new functionality. Then submit pull request to merge with main. This is to ensure that existing functional app does not get broken.
+
 #flutter commands
 #flutter create app_name or flutter create .
 #flutter doctor
