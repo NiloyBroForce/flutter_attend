@@ -1,11 +1,12 @@
+import 'dart:convert';
 import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'attendance.dart';
-
 
 class StudentHomeScreen extends StatefulWidget {
   const StudentHomeScreen({super.key});
@@ -289,9 +290,14 @@ class QRScannerWidget extends StatefulWidget {
 class _QRScannerWidgetState extends State<QRScannerWidget>
     with TickerProviderStateMixin {
   final MobileScannerController scannerController = MobileScannerController();
-  bool attended = false;
-  String? subjectName;
   late AnimationController animationController;
+
+  // Guards against re-processing while a scan is being verified, and
+  // surfaces validation feedback (invalid/expired/already-marked) to
+  // the student without leaving the scanner screen.
+  bool _isProcessing = false;
+  String? _statusMessage;
+  Color _statusColor = Colors.white70;
 
   @override
   void initState() {
@@ -331,6 +337,39 @@ class _QRScannerWidgetState extends State<QRScannerWidget>
             ),
           ),
         ),
+        if (_statusMessage != null)
+          Positioned(
+            bottom: 60,
+            left: 24,
+            right: 24,
+            child: Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 12,
+              ),
+              decoration: BoxDecoration(
+                color: Colors.black87,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                _statusMessage!,
+                textAlign: TextAlign.center,
+                style: TextStyle(color: _statusColor, fontSize: 14),
+              ),
+            ),
+          ),
+        if (_isProcessing)
+          const Positioned(
+            top: 40,
+            right: 16,
+            child: CircleAvatar(
+              backgroundColor: Colors.black54,
+              child: Padding(
+                padding: EdgeInsets.all(8.0),
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+            ),
+          ),
         Positioned(
           top: 40,
           left: 16,
@@ -356,38 +395,110 @@ class _QRScannerWidgetState extends State<QRScannerWidget>
   Widget _buildQRView(BuildContext context) {
     return MobileScanner(
       controller: scannerController,
-      onDetect: (BarcodeCapture capture) async {
-        if (attended) return;
-
-        final List<Barcode> barcodes = capture.barcodes;
-        if (barcodes.isNotEmpty) {
-          final String? codeValue = barcodes.first.rawValue;
-
-          if (codeValue != null) {
-            setState(() {
-              attended = true;
-              subjectName = codeValue;
-            });
-
-            await scannerController.stop();
-
-            await _updateAttendance(subjectName);
-
-            if (mounted) {
-              await Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => AttendanceConfirmationScreen(
-                    subjectName ?? '',
-                    widget.username,
-                  ),
-                ),
-              );
-            }
-          }
-        }
-      },
+      onDetect: _handleDetection,
     );
+  }
+
+  Future<void> _handleDetection(BarcodeCapture capture) async {
+    if (_isProcessing) return;
+
+    final barcodes = capture.barcodes;
+    if (barcodes.isEmpty) return;
+
+    final codeValue = barcodes.first.rawValue;
+    if (codeValue == null) return;
+
+    setState(() {
+      _isProcessing = true;
+      _statusMessage = 'Verifying...';
+      _statusColor = Colors.white70;
+    });
+
+    try {
+      // The QR encodes {"subjectId": "...", "token": "..."} — the token
+      // is rotated by the teacher's screen every 30 seconds.
+      final payload = jsonDecode(codeValue) as Map<String, dynamic>;
+      final subjectId = payload['subjectId'] as String?;
+      final token = payload['token'] as String?;
+
+      if (subjectId == null || token == null) {
+        _showTransientMessage('Invalid QR code.', Colors.redAccent);
+        return;
+      }
+
+      final docRef =
+          FirebaseFirestore.instance.collection('attendance').doc(subjectId);
+      final snapshot = await docRef.get();
+
+      if (!snapshot.exists) {
+        _showTransientMessage('Subject not found.', Colors.redAccent);
+        return;
+      }
+
+      final data = snapshot.data() as Map<String, dynamic>;
+      final currentToken = data['currentToken'] as String?;
+      final expiresAtTs = data['tokenExpiresAt'] as Timestamp?;
+
+      if (currentToken == null || token != currentToken) {
+        _showTransientMessage(
+          'This QR code is no longer active. Ask your teacher for the current one.',
+          Colors.redAccent,
+        );
+        return;
+      }
+
+      if (expiresAtTs == null ||
+          expiresAtTs.toDate().isBefore(DateTime.now())) {
+        _showTransientMessage(
+          'This QR code has expired. Ask your teacher to refresh it.',
+          Colors.redAccent,
+        );
+        return;
+      }
+
+      final existingStudents = (data['students'] as List?) ?? [];
+      final alreadyMarked = existingStudents.any(
+        (entry) => entry is Map && entry['userid'] == widget.userid,
+      );
+
+      if (alreadyMarked) {
+        _showTransientMessage(
+          'You are already marked present for $subjectId.',
+          Colors.orangeAccent,
+        );
+        return;
+      }
+
+      // Token is valid and this student hasn't been marked yet — record it.
+      await scannerController.stop();
+      await _updateAttendance(subjectId, docRef);
+
+      if (mounted) {
+        await Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) =>
+                AttendanceConfirmationScreen(subjectId, widget.username),
+          ),
+        );
+      }
+    } catch (e) {
+      _showTransientMessage('Something went wrong: $e', Colors.redAccent);
+    }
+  }
+
+  void _showTransientMessage(String message, Color color) {
+    if (!mounted) return;
+    setState(() {
+      _statusMessage = message;
+      _statusColor = color;
+      _isProcessing = false;
+    });
+
+    // Let the student read the result, then allow scanning again.
+    Future.delayed(const Duration(seconds: 3), () {
+      if (mounted) setState(() => _statusMessage = null);
+    });
   }
 
   Widget _buildCustomQRAnimation() {
@@ -423,26 +534,23 @@ class _QRScannerWidgetState extends State<QRScannerWidget>
     );
   }
 
-  Future<void> _updateAttendance(String? subjectName) async {
+  Future<void> _updateAttendance(
+    String subjectId,
+    DocumentReference<Map<String, dynamic>> docRef,
+  ) async {
     try {
-      if (subjectName != null) {
-        CollectionReference attendanceCollection =
-            FirebaseFirestore.instance.collection('attendance');
+      final studentRecord = {
+        'username': widget.username,
+        'userid': widget.userid,
+        'deviceid': widget.deviceid,
+        'timestamp': DateTime.now().toIso8601String(),
+      };
 
-        Map<String, dynamic> studentRecord = {
-          'username': widget.username,
-          'userid': widget.userid,
-          'deviceid': widget.deviceid,
-          'timestamp': DateTime.now().toIso8601String(),
-        };
+      await docRef.set({
+        'students': FieldValue.arrayUnion([studentRecord]),
+      }, SetOptions(merge: true));
 
-        // Write student payload to array inside subject doc
-        await attendanceCollection.doc(subjectName).set({
-          'students': FieldValue.arrayUnion([studentRecord]),
-        }, SetOptions(merge: true));
-
-        debugPrint('Attendance record updated with hardware tokens.');
-      }
+      debugPrint('Attendance record updated with hardware tokens.');
     } catch (e) {
       debugPrint('Error updating attendance: $e');
     }

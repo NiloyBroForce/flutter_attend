@@ -1,3 +1,7 @@
+import 'dart:async';
+import 'dart:convert';
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -281,25 +285,111 @@ class _AttendanceCountBadge extends StatelessWidget {
   }
 }
 
-class SubjectQRCodeScreen extends StatelessWidget {
+/// Displays a QR code for [subjectName] that rotates every 15 seconds.
+///
+/// The current token is written to the subject's Firestore document
+/// (`currentToken` / `tokenExpiresAt`) so that a student's scan can be
+/// validated server-side — a screenshotted or expired code will not work.
+class SubjectQRCodeScreen extends StatefulWidget {
   final String subjectName;
 
   const SubjectQRCodeScreen({super.key, this.subjectName = "cse"});
 
   @override
+  State<SubjectQRCodeScreen> createState() => _SubjectQRCodeScreenState();
+}
+
+class _SubjectQRCodeScreenState extends State<SubjectQRCodeScreen> {
+  static const _rotationDuration = Duration(seconds:15);
+
+  late final String subjectId;
+  late final DocumentReference<Map<String, dynamic>> _docRef;
+
+  String _currentToken = '';
+  DateTime _expiresAt = DateTime.now();
+  int _secondsLeft = 30;
+  Timer? _rotationTimer;
+  Timer? _countdownTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    subjectId = widget.subjectName.toLowerCase().trim();
+    _docRef = FirebaseFirestore.instance
+        .collection(TeacherHomeScreen.attendanceCollection)
+        .doc(subjectId);
+    _startSession();
+  }
+
+  Future<void> _startSession() async {
+    // Opening the QR screen starts a fresh attendance session: new token,
+    // cleared list of who's marked present.
+    await _rotateToken(resetStudents: true);
+    _rotationTimer = Timer.periodic(_rotationDuration, (_) => _rotateToken());
+    _countdownTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (!mounted) return;
+      final remaining = _expiresAt.difference(DateTime.now()).inSeconds;
+      setState(() => _secondsLeft = remaining.clamp(0, 30));
+    });
+  }
+
+  Future<void> _rotateToken({bool resetStudents = false}) async {
+    final token = _generateToken();
+    final expiresAt = DateTime.now().add(_rotationDuration);
+
+    final data = <String, dynamic>{
+      'currentToken': token,
+      'tokenExpiresAt': Timestamp.fromDate(expiresAt),
+    };
+    if (resetStudents) {
+      data['students'] = <String>[];
+      data['sessionStartedAt'] = Timestamp.now();
+    }
+
+    await _docRef.set(data, SetOptions(merge: true));
+
+    if (mounted) {
+      setState(() {
+        _currentToken = token;
+        _expiresAt = expiresAt;
+        _secondsLeft = 30;
+      });
+    }
+  }
+
+  String _generateToken() {
+    const chars =
+        'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    final rand = Random.secure();
+    return List.generate(24, (_) => chars[rand.nextInt(chars.length)]).join();
+  }
+
+  @override
+  void dispose() {
+    _rotationTimer?.cancel();
+    _countdownTimer?.cancel();
+    // Invalidate the token so a screenshot of the last code shown can't be
+    // scanned after the teacher leaves this screen.
+    _docRef.set({'tokenExpiresAt': Timestamp.now()}, SetOptions(merge: true));
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final String qrData = subjectName.toLowerCase().trim();
+    final qrData = _currentToken.isEmpty
+        ? null
+        : jsonEncode({'subjectId': subjectId, 'token': _currentToken});
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('QR Code for $subjectName'),
+        title: Text('QR Code for ${widget.subjectName}'),
         backgroundColor: Colors.blue,
       ),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text(
+            const Text(
               'Scan to Mark Attendance',
               style: TextStyle(
                 fontSize: 22,
@@ -309,7 +399,7 @@ class SubjectQRCodeScreen extends StatelessWidget {
             ),
             const SizedBox(height: 10),
             Text(
-              'Subject: $qrData',
+              'Subject: $subjectId',
               style: const TextStyle(fontSize: 16, color: Colors.grey),
             ),
             const SizedBox(height: 30),
@@ -328,18 +418,32 @@ class SubjectQRCodeScreen extends StatelessWidget {
                   ),
                 ],
               ),
-              child: QrImageView(
-                data: qrData,
-                version: QrVersions.auto,
-                size: 250.0,
-                gapless: false,
-                embeddedImageStyle: const QrEmbeddedImageStyle(
-                  size: Size(40, 40),
-                ),
-              ),
+              child: qrData == null
+                  ? const SizedBox(
+                      width: 250,
+                      height: 250,
+                      child: Center(child: CircularProgressIndicator()),
+                    )
+                  : QrImageView(
+                      data: qrData,
+                      version: QrVersions.auto,
+                      size: 250.0,
+                      gapless: false,
+                      embeddedImageStyle: const QrEmbeddedImageStyle(
+                        size: Size(40, 40),
+                      ),
+                    ),
             ),
 
-            const SizedBox(height: 40),
+            const SizedBox(height: 20),
+            Text(
+              'Refreshes in $_secondsLeft s',
+              style: const TextStyle(fontSize: 14, color: Colors.grey),
+            ),
+            const SizedBox(height: 20),
+            _LiveAttendanceCount(subjectId: subjectId),
+
+            const SizedBox(height: 30),
             ElevatedButton.icon(
               onPressed: () => Navigator.pop(context),
               icon: const Icon(Icons.arrow_back),
@@ -348,6 +452,31 @@ class SubjectQRCodeScreen extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _LiveAttendanceCount extends StatelessWidget {
+  final String subjectId;
+
+  const _LiveAttendanceCount({required this.subjectId});
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<DocumentSnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection(TeacherHomeScreen.attendanceCollection)
+          .doc(subjectId)
+          .snapshots(),
+      builder: (context, snapshot) {
+        final data = snapshot.data?.data() as Map<String, dynamic>?;
+        final rawStudents = data?['students'];
+        final count = rawStudents is List ? rawStudents.length : 0;
+        return Text(
+          '$count student${count == 1 ? '' : 's'} marked present this session',
+          style: const TextStyle(fontSize: 13, color: Colors.greenAccent),
+        );
+      },
     );
   }
 }
