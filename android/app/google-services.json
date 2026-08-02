@@ -15,11 +15,19 @@
       },
       "oauth_client": [
         {
-          "client_id": "508876084635-8tl72u8u503mmpda0on3folt9s78m77a.apps.googleusercontent.com",
+          "client_id": "508876084635-4d1gm1t3ojmk73b156eg8uk91ntb0mn8.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
             "package_name": "com.niloy.demo",
-            "certificate_hash": "f53a244caea933447d154ff06950e64f7ffa62ec"
+            "certificate_hash": "e7f6dca9624ee56c37d8bc97fc0502856dbc38f5"
+          }
+        },
+        {
+          "client_id": "508876084635-f333de7rivl7fdnauic9dneuf2fss87c.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.niloy.demo",
+            "certificate_hash": "a67ee451e5eaa69334f3e8638d282adf64198ae9"
           }
         },
         {

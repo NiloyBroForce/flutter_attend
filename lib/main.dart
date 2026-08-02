@@ -9,17 +9,9 @@ import 'package:google_sign_in/google_sign_in.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-
-  // Initialize Google Sign-In once at startup
-  try {
-    await GoogleSignIn.instance.initialize(
-      serverClientId:
-          '508876084635-0d4188u640du41mlj0h3s723fn7eudct.apps.googleusercontent.com',
-    );
-  } catch (e) {
-    debugPrint("GoogleSignIn init error: $e");
-  }
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
 
   runApp(const MyApp());
 }
@@ -53,15 +45,22 @@ class AuthGate extends StatelessWidget {
           );
         }
 
-        if (snapshot.hasData && snapshot.data != null) {
-          final email = (snapshot.data!.email ?? '').toLowerCase().trim();
-          final emailParts = email.split('@');
-          final domain = emailParts.length > 1 ? emailParts[1] : '';
+        final user = snapshot.data;
+        if (user != null) {
+          final userEmail = (user.email ?? '').toLowerCase().trim();
+          final domain = userEmail.contains('@') ? userEmail.split('@')[1] : '';
 
-          if (domain == 'student.sust.edu') {
+          final isStudent = domain == 'student.sust.edu';
+          final isTeacher = domain.contains('sust') && !isStudent;
+
+          if (isStudent) {
             return const StudentHomeScreen();
-          } else if (domain.contains('sust')) {
+          } else if (isTeacher) {
             return const TeacherHomeScreen();
+          } else {
+            // Unrecognized domain - sign out and force login screen
+            FirebaseAuth.instance.signOut();
+            return const LoginPage();
           }
         }
 
@@ -102,6 +101,23 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
+  Future<bool> _validateUserDomain(User currentUser) async {
+    final userEmail = (currentUser.email ?? '').toLowerCase().trim();
+    final domain = userEmail.contains('@') ? userEmail.split('@')[1] : '';
+
+    final isStudent = domain == 'student.sust.edu';
+    final isTeacher = domain.contains('sust');
+
+    if (!isStudent && !isTeacher) {
+      await _auth.signOut();
+      _showSnackBar(
+        'Access Denied: "$userEmail" is not an official SUST email.',
+      );
+      return false;
+    }
+    return true;
+  }
+
   Future<void> _handleSubmit(String email, String password) async {
     setState(() => _isLoading = true);
     try {
@@ -119,18 +135,7 @@ class _LoginPageState extends State<LoginPage> {
 
       final currentUser = _auth.currentUser;
       if (currentUser != null) {
-        final userEmail = (currentUser.email ?? '').toLowerCase().trim();
-        final domain = userEmail.contains('@') ? userEmail.split('@')[1] : '';
-
-        final isStudent = domain == 'student.sust.edu';
-        final isTeacher = domain.contains('sust');
-
-        if (!isStudent && !isTeacher) {
-          await _auth.signOut();
-          _showSnackBar(
-            'Access Denied: "$userEmail" is not an official SUST email.',
-          );
-        }
+        await _validateUserDomain(currentUser);
       }
     } catch (e) {
       _showSnackBar('Authentication failed: ${e.toString()}');
@@ -139,50 +144,42 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
-  // Android Google Sign-In
   Future<void> _handleAndroidGoogleSignIn() async {
     setState(() => _isLoading = true);
     try {
-      final googleSignIn = GoogleSignIn.instance;
+      final GoogleSignIn googleSignIn = GoogleSignIn(
+        serverClientId:
+            '508876084635-0d4188u640du41mlj0h3s723fn7eudct.apps.googleusercontent.com',
+        scopes: ['email', 'profile'],
+      );
 
-      final GoogleSignInAccount? googleUser = await googleSignIn.authenticate();
+      await googleSignIn.signOut();
+
+      final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
+
       if (googleUser == null) {
-        setState(() => _isLoading = false);
+        if (mounted) setState(() => _isLoading = false);
         return;
       }
 
-      final clientAuth = await googleUser.authorizationClient.authorizeScopes([
-        'email',
-        'profile',
-      ]);
+      final GoogleSignInAuthentication googleAuth =
+          await googleUser.authentication;
 
       final OAuthCredential credential = GoogleAuthProvider.credential(
-        idToken: googleUser.authentication.idToken,
-        accessToken: clientAuth.accessToken,
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
       );
 
-      final UserCredential userCredential = await _auth.signInWithCredential(
-        credential,
-      );
-      final User? user = userCredential.user;
+      final UserCredential userCredential =
+          await _auth.signInWithCredential(credential);
 
-      if (user != null) {
-        final userEmail = (user.email ?? '').toLowerCase().trim();
-        final domain = userEmail.contains('@') ? userEmail.split('@')[1] : '';
-
-        final isStudent = domain == 'student.sust.edu';
-        final isTeacher = domain.contains('sust');
-
-        if (!isStudent && !isTeacher) {
-          await _auth.signOut();
-          await googleSignIn.signOut();
-          _showSnackBar(
-            'Access Denied: "$userEmail" is not an official SUST email.',
-          );
-        }
+      // Validate email domain after Google Sign-In
+      if (userCredential.user != null) {
+        await _validateUserDomain(userCredential.user!);
       }
     } catch (e) {
-      _showSnackBar('Google Sign-In failed: $e');
+      debugPrint('Google Sign-In Error: $e');
+      _showSnackBar('Google Sign-In failed: ${e.toString()}');
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
