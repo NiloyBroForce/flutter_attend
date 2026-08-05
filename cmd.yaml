@@ -21,4 +21,5 @@ flutter run -d 52036850f43893a5 --debug --verbose
 flutter build apk --debug --verbose
 flutter build apk --release --verbose
 
-
+flutter build apk --target-platform android-arm --release --android-project-arg=--no-daemon
+flutter build apk --profile --target-platform android-arm

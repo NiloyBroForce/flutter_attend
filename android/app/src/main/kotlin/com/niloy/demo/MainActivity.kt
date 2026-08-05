@@ -1,4 +1,4 @@
-package com.example.flutter_attend
+package com.niloy.demo
 
 import io.flutter.embedding.android.FlutterActivity
 
