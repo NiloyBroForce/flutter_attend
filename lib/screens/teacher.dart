@@ -137,10 +137,10 @@ class TeacherHomeScreen extends StatelessWidget {
     final teacherEmail = user?.email ?? 'Teacher';
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: const Color.fromARGB(255, 0, 16, 32),
       appBar: AppBar(
         elevation: 0,
-        backgroundColor: Colors.white,
+        backgroundColor: const Color.fromARGB(255, 0, 128, 255),
         surfaceTintColor: Colors.white,
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -150,14 +150,14 @@ class TeacherHomeScreen extends StatelessWidget {
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF0F172A),
+                color: Color.fromARGB(255, 218, 222, 226),
               ),
             ),
             Text(
               teacherEmail,
               style: const TextStyle(
                 fontSize: 12,
-                color: Color(0xFF64748B),
+                color: Color.fromARGB(255, 230, 233, 236),
                 fontWeight: FontWeight.w400,
               ),
             ),
@@ -171,7 +171,11 @@ class TeacherHomeScreen extends StatelessWidget {
               shape: BoxShape.circle,
             ),
             child: IconButton(
-              icon: Icon(Icons.logout_rounded, color: Colors.red.shade600, size: 20),
+              icon: Icon(
+                Icons.logout_rounded,
+                color: Colors.red.shade600,
+                size: 20,
+              ),
               tooltip: 'Logout',
               onPressed: () => _signOut(context),
             ),
@@ -258,14 +262,14 @@ class TeacherHomeScreen extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
-                          color: Color(0xFF334155),
+                          color: Color.fromARGB(255, 218, 222, 226),
                         ),
                       ),
                       Text(
                         '${docs.length} active',
                         style: const TextStyle(
                           fontSize: 13,
-                          color: Color(0xFF64748B),
+                          color: Color.fromARGB(255, 218, 222, 226),
                           fontWeight: FontWeight.w500,
                         ),
                       ),
@@ -282,13 +286,10 @@ class TeacherHomeScreen extends StatelessWidget {
                     mainAxisSpacing: 12,
                     childAspectRatio: 0.85,
                   ),
-                  delegate: SliverChildBuilderDelegate(
-                    (context, index) {
-                      final subjectId = docs[index].id;
-                      return _SubjectCard(subjectId: subjectId);
-                    },
-                    childCount: docs.length,
-                  ),
+                  delegate: SliverChildBuilderDelegate((context, index) {
+                    final subjectId = docs[index].id;
+                    return _SubjectCard(subjectId: subjectId);
+                  }, childCount: docs.length),
                 ),
               ),
             ],
@@ -308,12 +309,12 @@ class _SubjectCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: const Color.fromARGB(255, 101, 104, 255),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: const Color(0xFFE2E8F0)),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF0F172A).withOpacity(0.04),
+            color: const Color.fromARGB(255, 122, 28, 28).withOpacity(0.04),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -352,18 +353,18 @@ class _SubjectCard extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFEFF6FF),
+                        color: const Color.fromARGB(255, 14, 10, 71),
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: const Icon(
                         Icons.menu_book_rounded,
-                        color: Color(0xFF1E3A8A),
+                        color: Color.fromARGB(255, 219, 218, 218),
                         size: 20,
                       ),
                     ),
                     const Icon(
                       Icons.chevron_right_rounded,
-                      color: Color(0xFF94A3B8),
+                      color: Color.fromARGB(255, 49, 8, 20),
                     ),
                   ],
                 ),
@@ -389,7 +390,7 @@ class _SubjectCard extends StatelessWidget {
                   child: ElevatedButton.icon(
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF1E3A8A),
-                      foregroundColor: Colors.white,
+                      foregroundColor: const Color.fromARGB(255, 253, 254, 255),
                       elevation: 0,
                       padding: const EdgeInsets.symmetric(vertical: 8),
                       shape: RoundedRectangleBorder(
@@ -408,7 +409,10 @@ class _SubjectCard extends StatelessWidget {
                     icon: const Icon(Icons.qr_code_rounded, size: 14),
                     label: const Text(
                       'QR Code',
-                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
                 ),
@@ -443,7 +447,9 @@ class _AttendanceCountBadge extends StatelessWidget {
         return Container(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
           decoration: BoxDecoration(
-            color: isPresent ? const Color(0xFFDCFCE7) : const Color(0xFFF1F5F9),
+            color: isPresent
+                ? const Color(0xFFDCFCE7)
+                : const Color(0xFFF1F5F9),
             borderRadius: BorderRadius.circular(6),
           ),
           child: Row(
@@ -452,7 +458,9 @@ class _AttendanceCountBadge extends StatelessWidget {
               Icon(
                 Icons.people_alt_outlined,
                 size: 12,
-                color: isPresent ? const Color(0xFF166534) : const Color(0xFF64748B),
+                color: isPresent
+                    ? const Color(0xFF166534)
+                    : const Color(0xFF64748B),
               ),
               const SizedBox(width: 4),
               Text(
@@ -460,7 +468,9 @@ class _AttendanceCountBadge extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w600,
-                  color: isPresent ? const Color(0xFF166534) : const Color(0xFF64748B),
+                  color: isPresent
+                      ? const Color(0xFF166534)
+                      : const Color(0xFF64748B),
                 ),
               ),
             ],
@@ -558,19 +568,22 @@ class _SubjectQRCodeScreenState extends State<SubjectQRCodeScreen> {
         : jsonEncode({'subjectId': subjectId, 'token': _currentToken});
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: const Color.fromARGB(255, 11, 8, 20),
       appBar: AppBar(
         elevation: 0,
-        backgroundColor: Colors.white,
+        backgroundColor: const Color(0xFF0F172A),
         surfaceTintColor: Colors.white,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Color(0xFF0F172A)),
+          icon: const Icon(
+            Icons.arrow_back_ios_new_rounded,
+            color: Color.fromARGB(255, 238, 239, 243),
+          ),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           'QR Session: ${widget.subjectName.toUpperCase()}',
           style: const TextStyle(
-            color: Color(0xFF0F172A),
+            color: Color.fromARGB(255, 255, 255, 255),
             fontWeight: FontWeight.bold,
             fontSize: 18,
           ),
@@ -587,7 +600,7 @@ class _SubjectQRCodeScreenState extends State<SubjectQRCodeScreen> {
                 style: TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF0F172A),
+                  color: Color.fromARGB(255, 0, 76, 255),
                 ),
               ),
               const SizedBox(height: 6),
@@ -635,7 +648,10 @@ class _SubjectQRCodeScreenState extends State<SubjectQRCodeScreen> {
               const SizedBox(height: 24),
 
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
                 decoration: BoxDecoration(
                   color: const Color(0xFFFEF3C7),
                   borderRadius: BorderRadius.circular(20),
@@ -643,7 +659,11 @@ class _SubjectQRCodeScreenState extends State<SubjectQRCodeScreen> {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.timer_outlined, size: 16, color: Color(0xFFB45309)),
+                    const Icon(
+                      Icons.timer_outlined,
+                      size: 16,
+                      color: Color(0xFFB45309),
+                    ),
                     const SizedBox(width: 6),
                     Text(
                       'Refreshing in ${_secondsLeft}s',
@@ -673,7 +693,10 @@ class _SubjectQRCodeScreenState extends State<SubjectQRCodeScreen> {
                     ),
                   ),
                   onPressed: () => Navigator.pop(context),
-                  icon: const Icon(Icons.stop_circle_outlined, color: Colors.redAccent),
+                  icon: const Icon(
+                    Icons.stop_circle_outlined,
+                    color: Colors.redAccent,
+                  ),
                   label: const Text(
                     'End Attendance Session',
                     style: TextStyle(
@@ -717,7 +740,11 @@ class _LiveAttendanceCount extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.check_circle_rounded, color: Color(0xFF15803D), size: 18),
+              const Icon(
+                Icons.check_circle_rounded,
+                color: Color(0xFF15803D),
+                size: 18,
+              ),
               const SizedBox(width: 8),
               Text(
                 '$count student${count == 1 ? '' : 's'} marked present',
