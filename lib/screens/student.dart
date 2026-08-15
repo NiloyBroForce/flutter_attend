@@ -780,89 +780,94 @@ class _QRScannerWidgetState extends State<QRScannerWidget> {
     );
   }
 
-  Future<void> _handleDetection(BarcodeCapture capture) async {
-    if (_isProcessing) return;
+Future<void> _handleDetection(BarcodeCapture capture) async {
+  if (_isProcessing) return;
 
-    final barcodes = capture.barcodes;
-    if (barcodes.isEmpty) return;
+  final barcodes = capture.barcodes;
+  if (barcodes.isEmpty) return;
 
-    final String? rawValue = barcodes.first.rawValue;
-    if (rawValue == null || rawValue.isEmpty) return;
+  final String? rawValue = barcodes.first.rawValue;
+  if (rawValue == null || rawValue.isEmpty) return;
 
-    setState(() {
-      _isProcessing = true;
-      _statusMessage = 'Verifying QR Code';
-      _statusColor = Colors.white;
-    });
+  setState(() {
+    _isProcessing = true;
+    _statusMessage = 'Verifying QR Code...';
+    _statusColor = Colors.white;
+  });
 
-    try {
-      final payload = jsonDecode(rawValue) as Map<String, dynamic>;
-      final subjectId = payload['subjectId'] as String?;
-      final sessionId = payload['sessionId'] as String?;
-      final token = payload['token'] as String?;
+  try {
+    final payload = jsonDecode(rawValue) as Map<String, dynamic>;
+    final subjectId = payload['subjectId'] as String?;
+    final sessionId = payload['sessionId'] as String?;
+    final token = payload['token'] as String?;
 
-      if (subjectId == null || sessionId == null || token == null) {
-        _showTransientMessage('Invalid QR format.', Colors.redAccent);
-        return;
-      }
-          final docRef = FirebaseFirestore.instance
-          .collection('attendance')
-          .doc(subjectId)
-          .collection('sessions')
-          .doc(sessionId);
-          
-      final snapshot = await docRef.get();
-
-      if (!snapshot.exists) {
-        _showTransientMessage('Subject record not found.', Colors.redAccent);
-        return;
-      }
-
-      final data = snapshot.data() as Map<String, dynamic>;
-      final currentToken = data['currentToken'] as String?;
-      final expiresAtTs = data['tokenExpiresAt'] as Timestamp?;
-
-      if (currentToken == null || token != currentToken) {
-        _showTransientMessage('QR code expired/invalid.', Colors.redAccent);
-        return;
-      }
-
-      if (expiresAtTs == null ||
-          expiresAtTs.toDate().isBefore(DateTime.now())) {
-        _showTransientMessage('QR code has expired.', Colors.redAccent);
-        return;
-      }
-
-      final existingStudents = (data['students'] as List?) ?? [];
-      final alreadyMarked = existingStudents.any(
-        (entry) =>
-            entry is Map &&
-            (entry['regId'] == widget.regId)
-      );
-
-      if (alreadyMarked) {
-        _showTransientMessage('Already marked present.', Colors.orangeAccent);
-        return;
-      }
-
-      await controller.stop();
-      await _updateAttendance(docRef);
-
-      if (mounted) {
-        await Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (context) =>
-                AttendanceConfirmationScreen(subjectId, widget.studentName),
-          ),
-        );
-      }
-    } catch (e) {
-      _showTransientMessage('Invalid QR payload.', Colors.redAccent);
+    if (subjectId == null || sessionId == null || token == null) {
+      _showTransientMessage('Invalid QR format.', Colors.redAccent);
+      return;
     }
-  }
 
-  void _showTransientMessage(String message, Color color) {
+    final docRef = FirebaseFirestore.instance
+        .collection('attendance')
+        .doc(subjectId)
+        .collection('sessions')
+        .doc(sessionId);
+
+    final snapshot = await docRef.get();
+
+    if (!snapshot.exists) {
+      _showTransientMessage('Session record not found.', Colors.redAccent);
+      return;
+    }
+
+    final data = snapshot.data() as Map<String, dynamic>;
+    final currentToken = data['currentToken'] as String?;
+    final expiresAtTs = data['tokenExpiresAt'] as Timestamp?;
+    final endedAtTs = data['sessionEndedAt'] as Timestamp?;
+
+    if (currentToken == null || token != currentToken) {
+      _showTransientMessage('QR code expired/invalid.', Colors.redAccent);
+      return;
+    }
+
+    if (expiresAtTs == null || expiresAtTs.toDate().isBefore(DateTime.now())) {
+      _showTransientMessage('QR code has expired.', Colors.redAccent);
+      return;
+    }
+
+    if (endedAtTs != null) {
+      _showTransientMessage('This class session has ended.', Colors.redAccent);
+      return;
+    }
+
+    final existingStudents = (data['students'] as List?) ?? [];
+    final alreadyMarked = existingStudents.any(
+      (entry) =>
+          entry is Map &&
+          (entry['regId'] == widget.regId),
+    );
+
+    if (alreadyMarked) {
+      _showTransientMessage('Already marked present.', Colors.orangeAccent);
+      return;
+    }
+
+    await controller.stop();
+    await _updateAttendance(docRef);
+
+    if (mounted) {
+      await Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) =>
+              AttendanceConfirmationScreen(subjectId, widget.studentName),
+        ),
+      );
+    }
+  } catch (e) {
+    _showTransientMessage('Invalid QR payload.', Colors.redAccent);
+  }
+}
+ void _showTransientMessage(String message, Color color) {
     if (!mounted) return;
     setState(() {
       _statusMessage = message;
