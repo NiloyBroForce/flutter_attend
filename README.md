@@ -47,6 +47,48 @@ Screenshots of the application interface are included below.
   <img src="https://github.com/user-attachments/assets/a9c16403-4656-4f33-8190-09eb12070156" alt="AttendanceConfirmation" height="400" />
 </p>
 
+## Screenshots description
+
+**1.Sign In Page**<br/>
+If a user has an account in the attendance app, then the user can sign in through the sign
+in page. For now, only SUST emails will be accepted by the sign in page. If the user does not have any
+account, they can click the sign up button at the bottom and then make a user account. If a user is a
+student and clicks the sign in button, the app takes the user to the student dashboard, and if the user is
+a teacher, then it takes the user to the teacher dashboard.<br/>
+**2.Sign up page**<br/>
+If a user wants to make an account in the attendance app, they can use the sign up
+page. They simply enter the SUST email address and a password, then click the sign up button and make
+a user account easily. If the user is a student, then they must enter the SUST student email address, and
+if the user is a teacher, then they must enter the SUST teacher's email. After clicking the sign up button,
+they can easily go to their dashboard by using the sign in page.<br/>
+**3.Student Dashboard**<br/>
+The student dashboard consists of three segments:
+first segment Displays the student's name (retrieved via their email address) and their
+Registration ID, which is unique to every student.
+In the middle segment it has a scanner option that allows students to scan a QR code provided by
+the course teacher.
+At last it’s show the Hardware ID of the device and Shows the Hardware lock and scanner
+status.<br/>
+**4.Teacher Dashboard**<br/>
+**5.Add subject**<br/>
+**6.Generate Qr Code**<br/>
+**7.Qr code scanner**<br/>
+ If the student clicks the scanner option, it will go to verify the QR code and
+mark the student present. Each QR code is uniquely generated for a specific time frame. Students
+use this scanner to record their attendance. If a student attempts to scan another QR code after
+already submitting their attendance, a pop-up message will appear stating, "Already marked
+present". Therefore, a student can only submit attendance once per session. Once attendance is
+submitted, the teacher can view the student's Name, Registration ID, and Hardware ID.
+The Hardware ID is unique to every device. If a student successfully records their attendance for
+a course and then logs into another account on the same device to submit a proxy attendance for
+someone else, the teacher will be able to spot the duplicate Hardware ID and flag both student
+accounts.<br/>
+
+**8.Attendance List**<br/>
+**9.Attendance confirmation**<br/>
+ If the student scans the QR code successfully, it will show a page and give a message to
+the student that they have successfully attended the course.<br/>
+
 # Getting Started
 
 **Requirements**
