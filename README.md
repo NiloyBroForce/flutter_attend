@@ -70,8 +70,14 @@ the course teacher.
 At last it’s show the Hardware ID of the device and Shows the Hardware lock and scanner
 status.<br/>
 **4.Teacher Dashboard**<br/>
+<img width="50%" alt="teacherDashboard" src="https://github.com/user-attachments/assets/513e9d9f-979c-4871-b149-fd63af539531" />
+<br/>
 **5.Add subject**<br/>
+<img width="%50" alt="AddSubject" src="https://github.com/user-attachments/assets/32905510-7b29-440d-aed2-a8bc052c54b2" />
+<br/>
 **6.Generate Qr Code**<br/>
+<img width="50%"  alt="QRcode" src="https://github.com/user-attachments/assets/bb562f37-0428-4d55-924a-c8f3bf812e94" />
+<br/>
 **7.Qr code scanner**<br/>
  If the student clicks the scanner option, it will go to verify the QR code and
 mark the student present. Each QR code is uniquely generated for a specific time frame. Students
@@ -85,6 +91,8 @@ someone else, the teacher will be able to spot the duplicate Hardware ID and fla
 accounts.<br/>
 
 **8.Attendance List**<br/>
+<img width="50%" alt="studentList" src="https://github.com/user-attachments/assets/53e9a26d-8cd8-4f7d-9d48-19169e132599" />
+<br/>
 **9.Attendance confirmation**<br/>
  If the student scans the QR code successfully, it will show a page and give a message to
 the student that they have successfully attended the course.<br/>
