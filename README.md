@@ -21,7 +21,7 @@ The application separates student and teacher functionality so that each type of
 ## Screenshots
  
 
-Screenshots of the application interface and its primary workflows are included below.
+Screenshots of the application interface are included below.
 <p align="center">
   <img src="https://github.com/user-attachments/assets/f19bc649-e286-4e35-9ab1-68e5dad4ef67" alt="SignIn" height="400" />
   <img src="https://github.com/user-attachments/assets/771f9516-62a2-4699-af97-343e6b2d7dc4" alt="SignUp" height="400" />
@@ -59,13 +59,13 @@ A Firebase project
 A configured Android development environment or compatible Flutter target
 1. Get the Source Code
 
-Clone the repository:
+Clone the repository with
 
 git clone https://github.com/NiloyBroForce/flutter_attend.git
 cd flutter_attend
 2. Install Flutter Packages
 
-Fetch the project's dependencies:
+Fetch the project's dependencies with
 
 flutter pub get
 3. Configure Firebase
@@ -74,7 +74,7 @@ Create a project through the Firebase Console and configure it for the applicati
 
 ## Authentication
 
-Open Firebase Console → Authentication → Sign-in method and enable the authentication providers required by the application, including:
+Open Firebase Console → Authentication → Sign-in method and enable the authentication providers required by the application, including
 
 Email/Password
 Google Sign-In
@@ -86,16 +86,11 @@ Set up Cloud Firestore: In Firebase Console, go to Firestore Database, and creat
 
 Register the Android application with your Firebase project and obtain its Firebase configuration file.
 
-Place:
+Place google-services.json inside android/app/
 
-google-services.json
-
-inside:
-
-android/app/
 4. Verify Firebase Dependencies
 
-The Flutter project should include the Firebase and QR-scanning packages required by the application, such as:
+The Flutter project should include the Firebase and QR-scanning packages required by the application, such as
 
 dependencies:
   firebase_core: latest_version
@@ -103,14 +98,10 @@ dependencies:
   cloud_firestore: latest_version
   qr_code_scanner: latest_version
 
-After making dependency changes, run:
-
-flutter pub get
+After making dependency changes, run flutter pub get
 5. Launch the Application
 
-Connect an Android device or start an emulator and execute:
-
-flutter run
+Connect an Android device or start an emulator and execute flutter run
 
 Make sure the Firebase configuration corresponds to the application before launching it.
 
