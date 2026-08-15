@@ -47,72 +47,83 @@ Screenshots of the application interface are included below.
   <img src="https://github.com/user-attachments/assets/a9c16403-4656-4f33-8190-09eb12070156" alt="AttendanceConfirmation" height="400" />
 </p>
 
-
-
 # Getting Started
-## Requirements
+
+**Requirements**
 
 Before setting up the project, install:
 
 Flutter SDK
 A Firebase project
 A configured Android development environment or compatible Flutter target
-1. Get the Source Code
+
+## Get the Source Code
 
 Clone the repository with
 
-git clone https://github.com/NiloyBroForce/flutter_attend.git
-cd flutter_attend
-2. Install Flutter Packages
+git clone https://github.com/NiloyBroForce/flutter_attend.git <br/>
+cd flutter_attend <br/>
+
+## Install Flutter Packages
 
 Fetch the project's dependencies with
 
-flutter pub get
-3. Configure Firebase
+flutter pub get <br/>
+
+## Configure Firebase
 
 Create a project through the Firebase Console and configure it for the application.
 
-## Authentication
+**Authentication**
 
 Open Firebase Console → Authentication → Sign-in method and enable the authentication providers required by the application, including
 
 Email/Password
 Google Sign-In
-Cloud Firestore
+
+**Cloud Firestore**
 
 Set up Cloud Firestore: In Firebase Console, go to Firestore Database, and create a new Firestore database. Start in "Test Mode" for development, but ensure you configure security rules later for production.
 
-## Android Configuration
+**Android Configuration**
 
 Register the Android application with your Firebase project and obtain its Firebase configuration file.
 
-Place google-services.json inside android/app/
+Place google-services.json inside android/app/ <br/>
 
-4. Verify Firebase Dependencies
+## Verify Firebase Dependencies
 
 The Flutter project should include the Firebase and QR-scanning packages required by the application, such as
 
 dependencies:
-  firebase_core: latest_version
-  firebase_auth: latest_version
-  cloud_firestore: latest_version
-  qr_code_scanner: latest_version
+firebase_core: latest_version
+firebase_auth: latest_version
+cloud_firestore: latest_version
+qr_code_scanner: latest_version
 
-After making dependency changes, run flutter pub get
-5. Launch the Application
+After making dependency changes, run flutter pub get <br/>
+
+## Launch the Application
 
 Connect an Android device or start an emulator and execute flutter run
 
 Make sure the Firebase configuration corresponds to the application before launching it.
 
 # Using the Application
+
 ## Students
+
 Sign in using an authorized account.
 Open the attendance functionality.
 Scan the QR code provided for the class.
 The attendance record is submitted for the corresponding subject.
+
 ## Teachers
+
 Sign in using a teacher account.
 Select the relevant subject.
 Generate the QR code for students to scan.
 Review the attendance records to see which students have registered.
+
+
+
