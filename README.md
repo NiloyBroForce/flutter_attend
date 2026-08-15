@@ -19,8 +19,35 @@ Role-Specific Interfaces
 The application separates student and teacher functionality so that each type of user only receives the tools relevant to their role.
 
 ## Screenshots
+ 
 
 Screenshots of the application interface and its primary workflows are included below.
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/f19bc649-e286-4e35-9ab1-68e5dad4ef67" alt="SignIn" height="400" />
+  <img src="https://github.com/user-attachments/assets/771f9516-62a2-4699-af97-343e6b2d7dc4" alt="SignUp" height="400" />
+</p>
+
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/4a6f9d01-785f-4c26-a835-d8925167fa52" alt="StudentDashboard2" height="400" />
+  <img src="https://github.com/user-attachments/assets/006ab0e7-ea54-4c7b-a54f-f33f40fe1e4e" alt="StudentDashboard" height="400" />
+</p>
+
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/de650c7f-5538-4d91-a18b-2809782e17ac" alt="TeacherDashboard" height="400" />
+  <img src="https://github.com/user-attachments/assets/08811d25-684b-489f-abb0-557ef71cc395" alt="AddSubjectForm" height="400" />
+</p>
+
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/9f4bfbd2-bf11-4945-9d01-e17923d940db" alt="QrCode" height="400" />
+  <img src="https://github.com/user-attachments/assets/d3d64455-05d5-41b9-9626-d7c7030c2f64" alt="ScanQrCode" height="400" />
+</p>
+
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/fb3a94f9-6d9c-40aa-9fed-7e1820bfc926" alt="AttendanceList" height="400" />
+  <img src="https://github.com/user-attachments/assets/a9c16403-4656-4f33-8190-09eb12070156" alt="AttendanceConfirmation" height="400" />
+</p>
+
+
 
 # Getting Started
 ## Requirements
