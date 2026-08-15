@@ -1,7 +1,6 @@
 
 
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -21,7 +20,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
   bool _isScanning = false;
-  String _deviceId = 'Fetching...';
+  String _deviceId = 'Fetching';
 
   @override
   void initState() {
@@ -34,13 +33,8 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
     String id = 'DEV-UNKNOWN';
 
     try {
-      if (Platform.isAndroid) {
         final androidInfo = await deviceInfo.androidInfo;
         id = androidInfo.id;
-      } else if (Platform.isIOS) {
-        final iosInfo = await deviceInfo.iosInfo;
-        id = iosInfo.identifierForVendor ?? 'IOS-UNKNOWN';
-      }
     } catch (_) {
       id = 'DEV-983X-8822';
     }
@@ -54,167 +48,14 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
     await _auth.signOut();
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final User? currentUser = _auth.currentUser;
-    final String email = currentUser?.email ?? '';
-
-    final String studentName =
-        currentUser?.displayName != null && currentUser!.displayName!.isNotEmpty
-        ? currentUser.displayName!
-        : (email.contains('@') ? email.split('@')[0] : 'Student User');
-
-    final String regId = email.contains('@')
-        ? email.split('@')[0].toUpperCase()
-        : (email.isNotEmpty ? email.toUpperCase() : 'REG-2026-001');
-
-    return Scaffold(
-      backgroundColor: const Color(0xFF030712),
-      appBar: AppBar(
-        scrolledUnderElevation: 0,
-        centerTitle: false,
-        titleSpacing: 20,
-        title: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFF0EA5E9), Color(0xFF2563EB)],
-                ),
-                borderRadius: BorderRadius.circular(10),
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color(0xFF0EA5E9).withOpacity(0.3),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: const Icon(
-                Icons.qr_code_scanner_rounded,
-                color: Colors.white,
-                size: 18,
-              ),
-            ),
-            const SizedBox(width: 12),
-            const Text(
-              'Student Portal',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 19,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 0.2,
-              ),
-            ),
-          ],
-        ),
-        backgroundColor: const Color(0xFF0B0F19),
-        elevation: 0,
-        actions: [
-          Container(
-            margin: const EdgeInsets.only(right: 16),
-            decoration: BoxDecoration(
-              color: const Color(0xFF1F2937).withOpacity(0.6),
-              shape: BoxShape.circle,
-              border: Border.all(color: Colors.white.withOpacity(0.08)),
-            ),
-            child: IconButton(
-              icon: const Icon(
-                Icons.logout_rounded,
-                color: Color(0xFF9CA3AF),
-                size: 18,
-              ),
-              onPressed: _signOut,
-              tooltip: 'Sign Out',
-            ),
-          ),
-        ],
-      ),
-      body: _isScanning
-          ? QRScannerWidget(
-              studentName: studentName,
-              regId: regId,
-              deviceId: _deviceId,
-              onCancel: () => setState(() => _isScanning = false),
-            )
-          : SingleChildScrollView(
-              physics: const BouncingScrollPhysics(),
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-              child: Center(
-                child: Container(
-                  constraints: const BoxConstraints(maxWidth: 480),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      _buildUserHero(studentName, regId),
-                      const SizedBox(height: 20),
-                      _buildScanCTA(),
-                      const SizedBox(height: 20),
-                      _buildDeviceInfoCard(_deviceId),
-                      const SizedBox(height: 28),
-                      Padding(
-                        padding: const EdgeInsets.only(left: 4, bottom: 12),
-                        child: Row(
-                          children: [
-                            Container(
-                              width: 3,
-                              height: 14,
-                              decoration: BoxDecoration(
-                                color: const Color(0xFF38BDF8),
-                                borderRadius: BorderRadius.circular(2),
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            const Text(
-                              'System Diagnostics',
-                              style: TextStyle(
-                                color: Color(0xFF9CA3AF),
-                                fontSize: 13,
-                                fontWeight: FontWeight.w700,
-                                letterSpacing: 0.6,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _buildStatBadge(
-                              icon: Icons.security_rounded,
-                              title: 'Hardware Lock',
-                              value: 'Verified',
-                              color: const Color(0xFF10B981),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: _buildStatBadge(
-                              icon: Icons.radar_rounded,
-                              title: 'Scanner Engine',
-                              value: 'Ready',
-                              color: const Color(0xFF38BDF8),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-    );
-  }
-
-  Widget _buildUserHero(String name, String regId) {
+Widget _buildUserHero(String name, String regId) {
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(24),
         gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Color(0xFF111827), Color(0xFF0F172A)],
+          colors: [Color(0xFF111827), Color.fromARGB(255, 5, 32, 95)],
         ),
         border: Border.all(
           color: const Color(0xFF38BDF8).withOpacity(0.18),
@@ -222,7 +63,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.4),
+            color: const Color.fromARGB(255, 6, 25, 134).withOpacity(0.4),
             blurRadius: 24,
             offset: const Offset(0, 10),
           ),
@@ -240,11 +81,11 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     gradient: const LinearGradient(
-                      colors: [Color(0xFF38BDF8), Color(0xFF2563EB)],
+                      colors: [Color(0xFF38BDF8), Color.fromARGB(255, 16, 78, 212)],
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: const Color(0xFF38BDF8).withOpacity(0.3),
+                        color: const Color.fromARGB(255, 10, 168, 236).withOpacity(0.3),
                         blurRadius: 10,
                       ),
                     ],
@@ -270,7 +111,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                       const Text(
                         'Name : ',
                         style: TextStyle(
-                          color: Color(0xFF64748B),
+                          color: Color.fromARGB(255, 139, 163, 197),
                           fontSize: 10,
                           fontWeight: FontWeight.w800,
                           letterSpacing: 1.1,
@@ -280,7 +121,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                       Text(
                         name,
                         style: const TextStyle(
-                          color: Colors.white,
+                          color: Color.fromARGB(255, 255, 255, 255),
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
                           letterSpacing: -0.2,
@@ -294,13 +135,11 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
             ),
             const SizedBox(height: 20),
             Container(
-              height: 1,
+              height: 5,
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
-                    Colors.white.withOpacity(0.02),
-                    Colors.white.withOpacity(0.08),
-                    Colors.white.withOpacity(0.02),
+                    const Color.fromARGB(255, 238, 225, 225).withValues(alpha: 0.02),Colors.white.withValues(alpha: 0.08),Colors.white.withValues(alpha: 0.02)
                   ],
                 ),
               ),
@@ -315,7 +154,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                     const Text(
                       'Reg ID : ',
                       style: TextStyle(
-                        color: Color(0xFF64748B),
+                        color: Color.fromARGB(255, 151, 176, 212),
                         fontSize: 10,
                         fontWeight: FontWeight.w800,
                         letterSpacing: 1.1,
@@ -381,7 +220,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
         gradient: const LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [Color(0xFF1E293B), Color(0xFF0F172A)],
+          colors: [Color(0xFF1E293B), Color.fromARGB(255, 9, 37, 102)],
         ),
         border: Border.all(
           color: const Color(0xFF2563EB).withOpacity(0.3),
@@ -389,7 +228,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
         ),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF2563EB).withOpacity(0.12),
+            color: const Color.fromARGB(255, 45, 104, 231).withOpacity(0.12),
             blurRadius: 30,
             offset: const Offset(0, 12),
           ),
@@ -446,7 +285,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
             'Scan the dynamic QR code displayed by your instructor to verify presence',
             textAlign: TextAlign.center,
             style: TextStyle(
-              color: Color(0xFF94A3B8),
+              color: Color.fromARGB(255, 166, 189, 221),
               fontSize: 13,
               height: 1.4,
             ),
@@ -607,6 +446,158 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
       ),
     );
   }
+    @override
+  Widget build(BuildContext context) {
+    final User? currentUser = _auth.currentUser;
+    final String email = currentUser?.email ?? '';
+
+    final String studentName =
+        currentUser?.displayName != null && currentUser!.displayName!.isNotEmpty
+        ? currentUser.displayName!
+        : (email.split('@')[0]);
+
+    final String regId = 
+         email.split('@')[0].toUpperCase();
+
+    return Scaffold(
+      backgroundColor: const Color(0xFF030712),
+      appBar: AppBar(
+        scrolledUnderElevation: 0,
+        centerTitle: false,
+        titleSpacing: 20,
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF0EA5E9), Color(0xFF2563EB)],
+                ),
+                borderRadius: BorderRadius.circular(10),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF0EA5E9),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: const Icon(
+                Icons.qr_code_scanner_rounded,
+                color: Colors.white,
+                size: 18,
+              ),
+            ),
+            const SizedBox(width: 12),
+            const Text(
+              'Student Portal',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 19,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0.2,
+              ),
+            ),
+          ],
+        ),
+        backgroundColor: const Color(0xFF0B0F19),
+        elevation: 0,
+        actions: [
+          Container(
+            margin: const EdgeInsets.only(right: 16),
+            decoration: BoxDecoration(
+              color: const Color(0xFF1F2937).withOpacity(0.6),
+              shape: BoxShape.circle,
+              border: Border.all(color: Colors.white.withOpacity(0.08)),
+            ),
+            child: IconButton(
+              icon: const Icon(
+                Icons.logout_rounded,
+                color: Color(0xFF9CA3AF),
+                size: 18,
+              ),
+              onPressed: _signOut,
+              tooltip: 'Sign Out',
+            ),
+          ),
+        ],
+      ),
+      body: _isScanning
+          ? QRScannerWidget(
+              studentName: studentName,
+              regId: regId,
+              deviceId: _deviceId,
+              onCancel: () => setState(() => _isScanning = false),
+            )
+          : SingleChildScrollView(
+              physics: const BouncingScrollPhysics(),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+              child: Center(
+                child: Container(
+                  constraints: const BoxConstraints(maxWidth: 480),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      _buildUserHero(studentName, regId),
+                      const SizedBox(height: 20),
+                      _buildScanCTA(),
+                      const SizedBox(height: 20),
+                      _buildDeviceInfoCard(_deviceId),
+                      const SizedBox(height: 28),
+                      Padding(
+                        padding: const EdgeInsets.only(left: 4, bottom: 12),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 3,
+                              height: 14,
+                              decoration: BoxDecoration(
+                                color: const Color.fromARGB(255, 72, 192, 240),
+                                borderRadius: BorderRadius.circular(2),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            const Text(
+                              'System Diagnostics',
+                              style: TextStyle(
+                                color: Color(0xFF9CA3AF),
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                                letterSpacing: 0.6,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _buildStatBadge(
+                              icon: Icons.security_rounded,
+                              title: 'Hardware Lock',
+                              value: 'Verified',
+                              color: const Color(0xFF10B981),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: _buildStatBadge(
+                              icon: Icons.radar_rounded,
+                              title: 'Scanner Engine',
+                              value: 'Ready',
+                              color: const Color(0xFF38BDF8),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+    );
+  }
+
 }
 
 class QRScannerWidget extends StatefulWidget {
@@ -759,7 +750,7 @@ class _QRScannerWidgetState extends State<QRScannerWidget> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   if (_isProcessing &&
-                      _statusMessage == 'Verifying QR Code...') ...[
+                      _statusMessage == 'Verifying QR Code') ...[
                     const SizedBox(
                       width: 16,
                       height: 16,
@@ -800,23 +791,26 @@ class _QRScannerWidgetState extends State<QRScannerWidget> {
 
     setState(() {
       _isProcessing = true;
-      _statusMessage = 'Verifying QR Code...';
+      _statusMessage = 'Verifying QR Code';
       _statusColor = Colors.white;
     });
 
     try {
       final payload = jsonDecode(rawValue) as Map<String, dynamic>;
       final subjectId = payload['subjectId'] as String?;
+      final sessionId = payload['sessionId'] as String?;
       final token = payload['token'] as String?;
 
-      if (subjectId == null || token == null) {
+      if (subjectId == null || sessionId == null || token == null) {
         _showTransientMessage('Invalid QR format.', Colors.redAccent);
         return;
       }
-
-      final docRef = FirebaseFirestore.instance
+          final docRef = FirebaseFirestore.instance
           .collection('attendance')
-          .doc(subjectId);
+          .doc(subjectId)
+          .collection('sessions')
+          .doc(sessionId);
+          
       final snapshot = await docRef.get();
 
       if (!snapshot.exists) {
@@ -843,7 +837,7 @@ class _QRScannerWidgetState extends State<QRScannerWidget> {
       final alreadyMarked = existingStudents.any(
         (entry) =>
             entry is Map &&
-            (entry['regId'] == widget.regId || entry['userid'] == widget.regId),
+            (entry['regId'] == widget.regId)
       );
 
       if (alreadyMarked) {
@@ -891,7 +885,6 @@ class _QRScannerWidgetState extends State<QRScannerWidget> {
     final studentRecord = {
       'username': widget.studentName,
       'regId': widget.regId,
-      'userid': widget.regId,
       'deviceid': widget.deviceId,
       'timestamp': DateTime.now().toIso8601String(),
     };

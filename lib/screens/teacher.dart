@@ -13,7 +13,6 @@ class TeacherHomeScreen extends StatelessWidget {
   const TeacherHomeScreen({super.key});
 
   static const String attendanceCollection = 'attendance';
-  static const String studentsSubcollection = 'students';
 
   Future<void> _signOut(BuildContext context) async {
     try {
@@ -24,7 +23,6 @@ class TeacherHomeScreen extends StatelessWidget {
         MaterialPageRoute(builder: (context) => const MyApp()),
       );
     } catch (e) {
-      debugPrint('Error signing out: $e');
     }
   }
 
@@ -41,7 +39,7 @@ class TeacherHomeScreen extends StatelessWidget {
           ),
           title: const Row(
             children: [
-              Icon(Icons.add_card_rounded, color: Color(0xFF1E3A8A)),
+              Icon(Icons.add_card_rounded, color: Color.fromARGB(255, 19, 50, 134)),
               SizedBox(width: 10),
               Text(
                 'Add New Subject',
@@ -221,13 +219,13 @@ class TeacherHomeScreen extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(24),
                     decoration: const BoxDecoration(
-                      color: Color(0xFFEFF6FF),
+                      color: Color.fromARGB(255, 221, 231, 243),
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(
                       Icons.class_outlined,
                       size: 64,
-                      color: Color(0xFF1E3A8A),
+                      color: Color.fromARGB(255, 65, 107, 223),
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -314,7 +312,7 @@ class _SubjectCard extends StatelessWidget {
         border: Border.all(color: const Color(0xFFE2E8F0)),
         boxShadow: [
           BoxShadow(
-            color: const Color.fromARGB(255, 122, 28, 28).withOpacity(0.04),
+            color: const Color.fromARGB(255, 43, 28, 255),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -439,8 +437,8 @@ class _AttendanceCountBadge extends StatelessWidget {
           .snapshots(),
       builder: (context, snapshot) {
         final data = snapshot.data?.data() as Map<String, dynamic>?;
-        final rawStudents = data?['students'];
-        final count = rawStudents is List ? rawStudents.length : 0;
+        final students = data?['students'];
+        final count = students is List ? students.length : 0;
 
         final isPresent = count > 0;
 
@@ -459,7 +457,7 @@ class _AttendanceCountBadge extends StatelessWidget {
                 Icons.people_alt_outlined,
                 size: 12,
                 color: isPresent
-                    ? const Color(0xFF166534)
+                    ? const Color.fromARGB(255, 23, 150, 72)
                     : const Color(0xFF64748B),
               ),
               const SizedBox(width: 4),
@@ -494,6 +492,7 @@ class _SubjectQRCodeScreenState extends State<SubjectQRCodeScreen> {
   static const _rotationDuration = Duration(seconds: 15);
 
   late final String subjectId;
+  late final String sessionId;
   late final DocumentReference<Map<String, dynamic>> _docRef;
 
   String _currentToken = '';
@@ -506,14 +505,21 @@ class _SubjectQRCodeScreenState extends State<SubjectQRCodeScreen> {
   void initState() {
     super.initState();
     subjectId = widget.subjectName.toLowerCase().trim();
-    _docRef = FirebaseFirestore.instance
+
+    final sessionRef = FirebaseFirestore.instance
         .collection(TeacherHomeScreen.attendanceCollection)
-        .doc(subjectId);
+        .doc(subjectId)
+        .collection('sessions')
+        .doc(); 
+
+    sessionId = sessionRef.id;
+    _docRef = sessionRef;
+
     _startSession();
   }
 
   Future<void> _startSession() async {
-    await _rotateToken(resetStudents: true);
+    await _rotateToken(isInitial: true);
     _rotationTimer = Timer.periodic(_rotationDuration, (_) => _rotateToken());
     _countdownTimer = Timer.periodic(const Duration(seconds: 1), (_) {
       if (!mounted) return;
@@ -522,7 +528,7 @@ class _SubjectQRCodeScreenState extends State<SubjectQRCodeScreen> {
     });
   }
 
-  Future<void> _rotateToken({bool resetStudents = false}) async {
+  Future<void> _rotateToken({bool isInitial = false}) async {
     final token = _generateToken();
     final expiresAt = DateTime.now().add(_rotationDuration);
 
@@ -530,8 +536,9 @@ class _SubjectQRCodeScreenState extends State<SubjectQRCodeScreen> {
       'currentToken': token,
       'tokenExpiresAt': Timestamp.fromDate(expiresAt),
     };
-    if (resetStudents) {
+    if (isInitial) {
       data['students'] = <String>[];
+      data['subjectId'] = subjectId;
       data['sessionStartedAt'] = Timestamp.now();
     }
 
@@ -557,7 +564,10 @@ class _SubjectQRCodeScreenState extends State<SubjectQRCodeScreen> {
   void dispose() {
     _rotationTimer?.cancel();
     _countdownTimer?.cancel();
-    _docRef.set({'tokenExpiresAt': Timestamp.now()}, SetOptions(merge: true));
+    _docRef.set({
+      'tokenExpiresAt': Timestamp.now(),
+      'sessionEndedAt': Timestamp.now(),
+    }, SetOptions(merge: true));
     super.dispose();
   }
 
@@ -565,8 +575,11 @@ class _SubjectQRCodeScreenState extends State<SubjectQRCodeScreen> {
   Widget build(BuildContext context) {
     final qrData = _currentToken.isEmpty
         ? null
-        : jsonEncode({'subjectId': subjectId, 'token': _currentToken});
-
+        : jsonEncode({
+            'subjectId': subjectId,
+            'sessionId': sessionId,
+            'token': _currentToken,
+          });
     return Scaffold(
       backgroundColor: const Color.fromARGB(255, 11, 8, 20),
       appBar: AppBar(
@@ -618,7 +631,7 @@ class _SubjectQRCodeScreenState extends State<SubjectQRCodeScreen> {
                   border: Border.all(color: const Color(0xFFE2E8F0)),
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFF0F172A).withOpacity(0.08),
+                      color: const Color.fromARGB(255, 4, 43, 134),
                       blurRadius: 20,
                       offset: const Offset(0, 8),
                     ),
@@ -728,8 +741,8 @@ class _LiveAttendanceCount extends StatelessWidget {
           .snapshots(),
       builder: (context, snapshot) {
         final data = snapshot.data?.data() as Map<String, dynamic>?;
-        final rawStudents = data?['students'];
-        final count = rawStudents is List ? rawStudents.length : 0;
+        final students = data?['students'];
+        final count = students is List ? students.length : 0;
         return Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
           decoration: BoxDecoration(
