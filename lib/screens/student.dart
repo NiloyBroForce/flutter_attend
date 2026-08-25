@@ -499,15 +499,15 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
               shape: BoxShape.circle,
               border: Border.all(color: Colors.white.withOpacity(0.08)),
             ),
-            child: IconButton(
-              icon: const Icon(
-                Icons.logout_rounded,
-                color: Color(0xFF9CA3AF),
-                size: 18,
-              ),
-              onPressed: _signOut,
-              tooltip: 'Sign Out',
-            ),
+            // child: IconButton(
+            //   icon: const Icon(
+            //     Icons.logout_rounded,
+            //     color: Color(0xFF9CA3AF),
+            //     size: 18,
+            //   ),
+            //   onPressed: _signOut,
+            //   tooltip: 'Sign Out',
+            // ),
           ),
         ],
       ),
