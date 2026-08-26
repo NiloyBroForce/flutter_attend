@@ -107,47 +107,6 @@ class _AuthPageState extends State<AuthPage> {
       backgroundColor: const Color(0xFF090A0F),
       body: Stack(
         children: [
-          Positioned(
-            top: -80,
-            left: widget.glowTop ? -60 : null,
-            right: widget.glowTop ? null : -60,
-            child: Container(
-              width: 260,
-              height: 260,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.transparent,
-                boxShadow: [
-                  BoxShadow(
-                    color: widget.topGlowColor.withOpacity(0.2),
-                    blurRadius: 100,
-                    spreadRadius: 20,
-                  ),
-                ],
-              ),
-            ),
-          ),
-          Positioned(
-            bottom: -80,
-            right: widget.glowTop ? -60 : null,
-            left: widget.glowTop ? null : -60,
-            child: Container(
-              width: 260,
-              height: 260,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.transparent,
-                boxShadow: [
-                  BoxShadow(
-                    color: widget.bottomGlowColor.withOpacity(0.18),
-                    blurRadius: 100,
-                    spreadRadius: 20,
-                  ),
-                ],
-              ),
-            ),
-          ),
-
           SafeArea(
             child: Center(
               child: SingleChildScrollView(
@@ -161,33 +120,7 @@ class _AuthPageState extends State<AuthPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      // Header Icon
-                      Center(
-                        child: Container(
-                          height: 72,
-                          width: 72,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            gradient: LinearGradient(
-                              colors: widget.headerIconGradient,
-                            ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: widget.headerIconGlow.withOpacity(0.4),
-                                blurRadius: 20,
-                                spreadRadius: 2,
-                              ),
-                            ],
-                          ),
-                          child: Icon(
-                            widget.headerIcon,
-                            size: 36,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
                       const SizedBox(height: 24),
-
                       Text(
                         widget.title,
                         style: const TextStyle(
@@ -215,7 +148,12 @@ class _AuthPageState extends State<AuthPage> {
                           color: const Color(0xFF13151E),
                           borderRadius: BorderRadius.circular(24),
                           border: Border.all(
-                            color: Colors.white.withOpacity(0.1),
+                            color: const Color.fromARGB(
+                              255,
+                              0,
+                              0,
+                              0,
+                            ).withOpacity(1),
                           ),
                         ),
                         child: Column(
@@ -234,11 +172,6 @@ class _AuthPageState extends State<AuthPage> {
                                 labelStyle: TextStyle(
                                   color: Colors.grey.shade400,
                                   fontSize: 13,
-                                ),
-                                prefixIcon: Icon(
-                                  Icons.alternate_email_rounded,
-                                  color: widget.borderColor,
-                                  size: 20,
                                 ),
                                 filled: true,
                                 fillColor: const Color(0xFF0B0C10),
@@ -270,11 +203,6 @@ class _AuthPageState extends State<AuthPage> {
                                 labelStyle: TextStyle(
                                   color: Colors.grey.shade400,
                                   fontSize: 13,
-                                ),
-                                prefixIcon: Icon(
-                                  Icons.lock_outline_rounded,
-                                  color: widget.borderColor,
-                                  size: 20,
                                 ),
                                 suffixIcon: IconButton(
                                   icon: Icon(
