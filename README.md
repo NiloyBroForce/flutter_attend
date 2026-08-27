@@ -1,4 +1,4 @@
-#Requirements and User Stories
+# Requirements and User Stories
 
 # Description
 The Flutter_attend is a mobile application developed using Flutter and Firebase that simplifies attendance management in educational institutions. Users can log in with their registered SUST email addresses and are redirected to specific pages based on their roles—students or teachers.
@@ -16,7 +16,7 @@ Students can record their presence by scanning the QR code displayed for a class
 
 Instructors can create QR codes for their subjects and use them during class sessions. They can also inspect attendance records to see which students have registered their attendance.
 
-#Backend Database description
+# Backend Database description
 
 
 ## Screenshots
