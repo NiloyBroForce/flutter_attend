@@ -27,7 +27,9 @@ Students can record their presence by scanning the QR code displayed for a class
 Instructors can create QR codes for their subjects and use them during class sessions. They can also inspect attendance records to see which students have registered their attendance.
 
 # Backend Database description
-
+<img height="500" alt="Diagram" src="https://github.com/user-attachments/assets/26a5d441-7a12-4bd4-b4a3-1b774050149c" />
+<br>
+The database used is Firebase, which is a no-sql database that organises data into documents and collections. The data is saved as key-value pairs. The subject collection contains string activeOtp which is what the student tries to match to mark attendance. For each student, a session sub-collection is generated that contains student information. A subject collection can have one-to-many session subcollections.
 
 ## Screenshots
  
@@ -107,4 +109,6 @@ accounts.<br/>
 **9.Attendance confirmation**<br/>
  If the student scans the QR code successfully, it will show a page and give a message to
 the student that they have successfully attended the course.<br/>
+
+
 
