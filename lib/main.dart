@@ -101,7 +101,8 @@ class _Login extends State<Login> {
                         letterSpacing: 0.5,
                       ),
                 ),
-                Sizedbox(height:40),
+                const SizedBox(height: 40),
+
                 Card(
                   margin: const EdgeInsets.symmetric(
                     horizontal: 16,
