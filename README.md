@@ -1,4 +1,14 @@
-# Requirements and User Stories
+# Attendance android app Requirements
+1. The system should run on 32 bit and 64 bit ARM android phones.
+2. The system must provide sign up and sign in functionality
+3. The system must provide helpful error messages that instruct the user on what to do.
+4. The system shall have good color contrast for various phone resolutions.
+5. The system must provide a student dashboard where students can submit their attendance.
+6. The system must provide a teacher dashboard where a teacher can track attendance of registered students.
+
+# User Stories
+1. As a Teacher, I want an easy to use responsive interface. I want to log in using my institution email so that I can access my assigned courses. I want to be able to easily view attendance list of students.
+2. As a student, I want information of courses to be easily accessible from the interface. I want easy log in feature that links with my registration id. I want to quickly mark my attendance for my registered courses.
 
 # Description
 The Flutter_attend is a mobile application developed using Flutter and Firebase that simplifies attendance management in educational institutions. Users can log in with their registered SUST email addresses and are redirected to specific pages based on their roles—students or teachers.
