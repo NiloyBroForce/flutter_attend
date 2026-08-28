@@ -37,10 +37,11 @@ class UI extends StatelessWidget {
         if (user != null) {
           final userEmail = user.email ?? ''.toLowerCase().trim();
           final domain = userEmail.contains('@') ? userEmail.split('@')[1] : '';
+          final registration = userEmail.contains('@') ? userEmail.split('@')[0] : '';
           final student = domain == 'student.sust.edu';
           final teacher = domain.contains('sust') && !student;
 
-          if (student) return StudentScreen(studentEmail: userEmail);
+          if (student) return StudentScreen(studentEmail: userEmail,studentReg:registration);
           if (teacher) return TeacherScreen();
         }
         return const Login();
@@ -90,13 +91,24 @@ class _Login extends State<Login> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
+                Text(
+                  'Shahjalal University of Science and Technology',
+                  textAlign: TextAlign.center,
+                    style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: const Color.fromARGB(204, 255, 255, 255),
+                        letterSpacing: 0.5,
+                      ),
+                ),
+                Sizedbox(height:40),
                 Card(
                   margin: const EdgeInsets.symmetric(
                     horizontal: 16,
                     vertical: 8,
                   ),
                   elevation: 6,
-                  color: Colors.blueAccent,
+                  color: const Color.fromRGBO(68, 138, 255, 1),
                   surfaceTintColor: const Color.fromARGB(255, 243, 14, 205),
                   shadowColor: const Color.fromARGB(255, 186, 212, 255),
                   child: Padding(
@@ -109,7 +121,7 @@ class _Login extends State<Login> {
                         color: Color.fromARGB(221, 231, 218, 218),
                       ),
                       textAlign: TextAlign.center,
-                    ), // Internal spacing for content
+                    ), 
                   ),
                 ),
                 Center(
@@ -169,7 +181,6 @@ class Logic {
         password: password,
       );
     } catch (e) {
-      SnackBar(content: Text('Reg error $e'));
       rethrow;
     }
   }
@@ -181,7 +192,6 @@ class Logic {
         password: password,
       );
     } catch (e) {
-      SnackBar(content: Text('Reg error $e'));
       rethrow;
     }
   }

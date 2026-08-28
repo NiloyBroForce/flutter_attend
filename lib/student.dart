@@ -5,9 +5,10 @@ import 'package:device_info_plus/device_info_plus.dart';
 import 'dart:io';
 
 class StudentScreen extends StatefulWidget {
-  const StudentScreen({super.key, required this.studentEmail});
+  const StudentScreen({super.key, required this.studentEmail,required this.studentReg});
 
   final String studentEmail;
+  final String studentReg;
 
   @override
   State<StudentScreen> createState() => _StudentScreenState();
@@ -62,7 +63,7 @@ Future<String> getDeviceId() async {
         ScaffoldMessenger.of(context).showSnackBar( const SnackBar(content: Text("Code expired")), ); return;
       }
 
-      final attend=await docs.reference.collection('attend').
+      final attend=await docs.reference.collection('session').
       where(
         'studentEmail',
         isEqualTo:widget.studentEmail
@@ -77,8 +78,9 @@ Future<String> getDeviceId() async {
         return;
       }
       final deviceId = await getDeviceId();
-      await docs.reference.collection("attend").add({
+      await docs.reference.collection("session").add({
         'studentEmail': widget.studentEmail,
+        'Registration' :widget.studentReg,
         'attendanceMarkedAt': FieldValue.serverTimestamp(),
         'deviceId':deviceId,
       });
@@ -106,7 +108,7 @@ Future<String> getDeviceId() async {
         title: const Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.school, color: Colors.white), // Student Icon here
+            Icon(Icons.school, color: Colors.white),
             SizedBox(width: 8),
             Text('Welcome Student', style: TextStyle(color: Colors.white)),
           ],
@@ -122,6 +124,7 @@ Future<String> getDeviceId() async {
       body: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
+              
           Card(
             margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             elevation: 6,
@@ -138,7 +141,7 @@ Future<String> getDeviceId() async {
                   color: Color.fromARGB(221, 231, 218, 218),
                 ),
                 textAlign: TextAlign.center,
-              ), // Internal spacing for content
+              ), 
             ),
           ),
 

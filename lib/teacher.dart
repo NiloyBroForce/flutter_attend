@@ -112,8 +112,8 @@ class TeacherScreen extends StatelessWidget {
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor:
-                          Colors.blue, // Accepts standard Colors directly
-                      foregroundColor: Colors.white, // Text/icon color
+                          Colors.blue,
+                      foregroundColor: Colors.white,
                     ),
                     child: const Text('Generate code'),
                   ),
@@ -123,6 +123,7 @@ class TeacherScreen extends StatelessWidget {
           );
         },
       ),
+      
       floatingActionButton: FloatingActionButton(
         onPressed: () => _subjectDialog(context),
         tooltip: 'Add Subject',
@@ -146,7 +147,7 @@ class _CodeState extends State<Code> {
   late Timer _timer;
 
   String _otp = '';
-  int _secondsLeft = 5;
+  int _secondsLeft = 6;
   @override
 
   void initState() {
@@ -176,7 +177,7 @@ class _CodeState extends State<Code> {
 
     if (mounted) {
       setState(() => _otp = otp);
-      _secondsLeft=5;
+      _secondsLeft=6;
     }
 
     try {
@@ -225,7 +226,9 @@ Future<void> _endAttendance() async {
       ),
       body: Center(
         child:Column(
-        children:[Card(
+        children:[
+          
+          Card(
           child: Padding(
             padding: const EdgeInsets.all(24),
             child: Text(
@@ -277,14 +280,14 @@ class _listState extends State<list> {
   @override
   void initState() {
     super.initState();
-    _studentFuture = student(widget.subId); // Stored once
+    _studentFuture = student(widget.subId);
   }
 
   Future<List<Map<String, dynamic>>> student(String subId) async {
     final querySnapshot = await FirebaseFirestore.instance
         .collection('new')
         .doc(subId)
-        .collection('attend')
+        .collection('session')
         .get();
 
     return querySnapshot.docs.map((doc) {
