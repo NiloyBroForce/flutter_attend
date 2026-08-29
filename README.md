@@ -36,7 +36,7 @@ The database used is Firebase, which is a no-sql database that organises data in
 
 Screenshots of the application interface are included below.
 <p align="center">
-  <img src="https://github.com/user-attachments/assets/ad04fe1e-f0db-48d8-a004-57f85dd3de25" alt="Login height="400"/>
+  <img src="https://github.com/user-attachments/assets/ad04fe1e-f0db-48d8-a004-57f85dd3de25" alt="Login" height="400"/>
   <img src="https://github.com/user-attachments/assets/d093888f-5b0c-49ce-bf50-ac77ab842419" alt="StudentDashboard" height="400" />
 </p>
 
