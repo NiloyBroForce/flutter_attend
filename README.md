@@ -40,13 +40,14 @@ Screenshots of the application interface are included below.
 </p>
 
 <p align="center">
-  <img src="https://github.com/user-attachments/assets/67343408-40ce-4a80-a8b4-bd6b76c71c1f" alt="TeacherDashboard" height="400" />
-  <img src="https://github.com/user-attachments/assets/08811d25-684b-489f-abb0-557ef71cc395" alt="AddSubjectForm" height="400" />
+  <img src="https://github.com/user-attachments/assets/1c34382e-0cc5-4d80-8ed3-909629db1d9b" alt="TeacherDashboard" height="400" />
+  <img src="https://github.com/user-attachments/assets/c2bef120-e4f8-447d-a659-1c76fb9abe59" alt="AddSubjectForm" height="400" />
+
 </p>
 
 <p align="center">
   <img src="https://github.com/user-attachments/assets/294233c7-f0ef-4ac9-b5da-2fea03133774" alt="Code" height="400" />
-  <img src="https://github.com/user-attachments/assets/fb3a94f9-6d9c-40aa-9fed-7e1820bfc926" alt="AttendanceList" height="400" />
+  <img src="https://github.com/user-attachments/assets/988916c5-baea-4199-a058-62234b2d76f9"  alt="AttendanceList" height="400" />
 </p>
 
 ## Screenshots description
