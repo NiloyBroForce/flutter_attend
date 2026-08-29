@@ -1,183 +1,199 @@
-
-import 'dart:async';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'student.dart';
 import 'firebase_options.dart';
-import 'screens/teacher.dart';
-import 'screens/student.dart';
-import 'package:google_sign_in/google_sign_in.dart';
-import 'screens/signin_page.dart';
-import 'screens/signup_page.dart';
+import 'teacher.dart';
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  runApp(const MyApp());
+  runApp(const App());
 }
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+
+class App extends StatelessWidget {
+  const App({super.key});
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Android Attendance',
-      theme: ThemeData(brightness: Brightness.dark, primarySwatch: Colors.blue),
-      home: const AuthGate(),
+      title: 'android',
+      theme: ThemeData(brightness: Brightness.dark),
+      home: UI(),
       debugShowCheckedModeBanner: false,
     );
   }
 }
-class AuthGate extends StatelessWidget {
-  const AuthGate({super.key});
+
+class UI extends StatelessWidget {
+  const UI({super.key});
+
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder<User?>(
+    return StreamBuilder(
       stream: FirebaseAuth.instance.authStateChanges(),
       builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Scaffold(
-            backgroundColor: Color(0xFF0F172A),
-            body: Center(child: CircularProgressIndicator()),
-          );
-        }
         final user = snapshot.data;
         if (user != null) {
-          final userEmail = (user.email ?? '').toLowerCase().trim();
+          final userEmail = user.email ?? ''.toLowerCase().trim();
           final domain = userEmail.contains('@') ? userEmail.split('@')[1] : '';
-          final isStudent = domain == 'student.sust.edu';
-          final isTeacher = domain.contains('sust') && !isStudent;
-          if (isStudent) {
-            return const StudentHomeScreen();
-          } else if (isTeacher) {
-            return const TeacherHomeScreen();
-          } else {
-            // Unrecognized domain - sign out and force login screen
-            FirebaseAuth.instance.signOut();
-            return const LoginPage();
-          }
+          final registration = userEmail.contains('@') ? userEmail.split('@')[0] : '';
+          final student = domain == 'student.sust.edu';
+          final teacher = domain.contains('sust') && !student;
+
+          if (student) return StudentScreen(studentEmail: userEmail,studentReg:registration);
+          if (teacher) return TeacherScreen();
         }
-        return const LoginPage();
+        return const Login();
       },
     );
   }
 }
-class LoginPage extends StatefulWidget {
-  const LoginPage({super.key});
-  @override
-  State<LoginPage> createState() => _LoginPageState();
-}
-class _LoginPageState extends State<LoginPage> {
-  final FirebaseAuth _auth = FirebaseAuth.instance;
-  bool _isSignUpMode = false;
 
-  void _showSnackBar(String text) {
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          text,
-          style: const TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
+class Login extends StatefulWidget {
+  const Login({super.key});
+
+  @override
+  State<Login> createState() => _Login();
+}
+
+class _Login extends State<Login> {
+  late final emailcontroller = TextEditingController();
+  late final passwordcontroller = TextEditingController();
+
+  Future<void> _submit_Sign_in() async {
+    final email = emailcontroller.text.trim();
+    final password = passwordcontroller.text;
+
+    return Logic.Sign_in(email, password);
+  }
+
+  Future<void> _submit_Sign_up() async {
+    final email = emailcontroller.text.trim();
+    final password = passwordcontroller.text;
+
+    return Logic.Sign_up(email, password);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color.fromARGB(255, 10, 0, 36),
+      appBar: AppBar(
+        title: Text('Android Attendance'),
+        backgroundColor: const Color.fromARGB(255, 0, 13, 71),
+      ),
+      body: Stack(
+        children: [
+          Container(
+            padding: EdgeInsets.all(30),
+            decoration: BoxDecoration(borderRadius: BorderRadius.circular(60)),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  'Shahjalal University of Science and Technology',
+                  textAlign: TextAlign.center,
+                    style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: const Color.fromARGB(204, 255, 255, 255),
+                        letterSpacing: 0.5,
+                      ),
+                ),
+                const SizedBox(height: 40),
+
+                Card(
+                  margin: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
+                  elevation: 6,
+                  color: const Color.fromRGBO(68, 138, 255, 1),
+                  surfaceTintColor: const Color.fromARGB(255, 243, 14, 205),
+                  shadowColor: const Color.fromARGB(255, 186, 212, 255),
+                  child: Padding(
+                    padding: const EdgeInsets.all(20.0),
+                    child: const Text(
+                      'Enter your email and password',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Color.fromARGB(221, 231, 218, 218),
+                      ),
+                      textAlign: TextAlign.center,
+                    ), 
+                  ),
+                ),
+                Center(
+                  child: TextField(
+                    controller: emailcontroller,
+                    style: TextStyle(fontSize: 14, color: Colors.white),
+                    decoration: InputDecoration(
+                      icon: Icon(Icons.email),
+                      labelText: 'email',
+                      hintText: 'e.g. someone@domain.com',
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 40),
+                Center(
+                  child: TextField(
+                    obscureText: true,
+                    controller: passwordcontroller,
+                    style: TextStyle(fontSize: 14, color: Colors.white),
+                    decoration: InputDecoration(
+                      icon: Icon(Icons.lock),
+                      labelText: 'password',
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 40),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    ElevatedButton(
+                      onPressed: _submit_Sign_in,
+                      child: Text('Sign in'),
+                    ),
+                    const SizedBox(width: 20),
+                    ElevatedButton(
+                      onPressed: _submit_Sign_up,
+                      child: Text("Sign up"),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
-        ),
-        backgroundColor: const Color(0xFFEF4444),
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        duration: const Duration(seconds: 4),
+        ],
       ),
     );
   }
-  Future<bool> _validateUserDomain(User currentUser) async {
-    final userEmail = (currentUser.email ?? '').toLowerCase().trim();
-    final domain = userEmail.contains('@') ? userEmail.split('@')[1] : '';
-    final isStudent = domain == 'student.sust.edu';
-    final isTeacher = domain.contains('sust');
-    if (!isStudent && !isTeacher) {
-      await _auth.signOut();
-      _showSnackBar(
-        'Access Denied: "$userEmail" is not an official SUST email.',
-      );
-      return false;
-    }
-    return true;
-  }
-  Future<void> _handleSignIn(String email, String password) async {
+}
+
+final FirebaseAuth auth = FirebaseAuth.instance;
+
+class Logic {
+  static Future<void> Sign_in(String email, String password) async {
     try {
-      await _auth.signInWithEmailAndPassword(
+      await auth.signInWithEmailAndPassword(
         email: email.trim(),
         password: password,
       );
-      final currentUser = _auth.currentUser;
-      if (currentUser != null) {
-        await _validateUserDomain(currentUser);
-      }
     } catch (e) {
-      _showSnackBar('Authentication failed: ${e.toString()}');
-      rethrow; // Pass error back to UI so loading state can reset cleanly
-    }
-  }
-  Future<void> _handleSignUp(String email, String password) async {
-    try {
-      await _auth.createUserWithEmailAndPassword(
-        email: email.trim(),
-        password: password,
-      );
-      final currentUser = _auth.currentUser;
-      if (currentUser != null) {
-        await _validateUserDomain(currentUser);
-      }
-    } catch (e) {
-      _showSnackBar('Registration failed: ${e.toString()}');
       rethrow;
     }
   }
-  Future<void> _handleAndroidGoogleSignIn() async {
+
+  static Future<void> Sign_up(String email, String password) async {
     try {
-       final GoogleSignIn googleSignIn = GoogleSignIn(
-        serverClientId:
-            '508876084635-0d4188u640du41mlj0h3s723fn7eudct.apps.googleusercontent.com',
-        scopes: ['email', 'profile'],
+      await auth.createUserWithEmailAndPassword(
+        email: email.trim(),
+        password: password,
       );
-      await googleSignIn.signOut();
-      final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
-      if (googleUser == null) return;
-      final GoogleSignInAuthentication googleAuth =
-          await googleUser.authentication;
-      final OAuthCredential credential = GoogleAuthProvider.credential(
-        accessToken: googleAuth.accessToken,
-        idToken: googleAuth.idToken,
-      );
-      final UserCredential userCredential = await _auth.signInWithCredential(
-        credential,
-      );
-      // Validate email domain after Google Sign-In
-      if (userCredential.user != null) {
-        await _validateUserDomain(userCredential.user!);
-      }
     } catch (e) {
-      debugPrint('Google Sign-In Error: $e');
-      _showSnackBar('Google Sign-In failed: ${e.toString()}');
+      rethrow;
     }
-  }
-   @override
-  Widget build(BuildContext context) {
-    if (_isSignUpMode) {
-      return SignUpPage(
-        onSignUp: (email, password) => _handleSignUp(email, password),
-        onNavigateToSignIn: () {
-          setState(() => _isSignUpMode = false);
-        },
-      onSignUpWithGoogle: () => _handleAndroidGoogleSignIn(),
-
-      );
-    }
-    return SignInPage(
-      onSignIn: (email, password) => _handleSignIn(email, password),
-      onNavigateToSignUp: () {
-        setState(() => _isSignUpMode = true);
-      },
-      onSignInWithGoogle: () => _handleAndroidGoogleSignIn(),
-
-    );
   }
 }
