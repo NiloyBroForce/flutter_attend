@@ -7,19 +7,19 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 class TeacherScreen extends StatelessWidget {
   const TeacherScreen({super.key});
 
-  Future<void> addSubjectWithCustomId(String subName) async {
+  Future<void> addCourseWithCustomId(String subName) async {
     await FirebaseFirestore.instance.collection('new').doc(subName).set({
       'createdAt': FieldValue.serverTimestamp(),
     });
   }
 
-  void _subjectDialog(BuildContext context) {
+  void _CourseDialog(BuildContext context) {
     String subName = '';
 
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Center(child: Text('Add New Subject')),
+        title: const Center(child: Text('Add New Course')),
         content: TextField(
           onChanged: (value) => subName = value,
           decoration: InputDecoration(hintText: 'e.g. SWE250'),
@@ -33,7 +33,7 @@ class TeacherScreen extends StatelessWidget {
             onPressed: () async {
               if (subName.trim().isEmpty) return;
 
-              await addSubjectWithCustomId(subName);
+              await addCourseWithCustomId(subName);
 
               if (!dialogContext.mounted) return;
               Navigator.pop(dialogContext);
@@ -81,7 +81,7 @@ class TeacherScreen extends StatelessWidget {
           final docs = snapshot.data?.docs ?? [];
 
           if (docs.isEmpty) {
-            return const Center(child: Text('No subjects found.'));
+            return const Center(child: Text('No Courses found.'));
           }
 
           return ListView.builder(
@@ -92,7 +92,7 @@ class TeacherScreen extends StatelessWidget {
               return Card(
                 margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                 child: ListTile(
-                  title: Text('Subject $subId'),
+                  title: Text('Course $subId'),
                   onTap: () {
                     Navigator.push(
                       context,
@@ -125,8 +125,8 @@ class TeacherScreen extends StatelessWidget {
       ),
       
       floatingActionButton: FloatingActionButton(
-        onPressed: () => _subjectDialog(context),
-        tooltip: 'Add Subject',
+        onPressed: () => _CourseDialog(context),
+        tooltip: 'Add Course',
         child: const Icon(Icons.add),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
@@ -307,7 +307,7 @@ Future<List<Map<String, dynamic>>> student(String subId) async {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Subject Details: ${widget.subId}'),
+        title: Text('Course Details: ${widget.subId}'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () {
@@ -315,6 +315,7 @@ Future<List<Map<String, dynamic>>> student(String subId) async {
           },
         ),
       ),
+      backgroundColor: const Color.fromARGB(255, 5, 0, 51),
       body: FutureBuilder<List<Map<String, dynamic>>>(
         future: _studentFuture,
         builder: (context, snapshot) {
@@ -331,14 +332,31 @@ Future<List<Map<String, dynamic>>> student(String subId) async {
             itemCount: data.length,
             itemBuilder: (context, index) {
               final record = data[index];
-              final email = record['studentEmail'];
+            final timestamp = record['attendanceMarkedAt'];
+ String attendanceTime = '';
+            if (timestamp is Timestamp) {
+              attendanceTime = timestamp.toDate().toString();
+            }
 
               return Card(
                 margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                 child: ListTile(
                   leading: const Icon(Icons.person),
-                  title: Text(email),
-                  subtitle: const Text('Attendance Marked'),
+                  title: Text( record['studentEmail']?.toString() ?? '',),
+                   subtitle: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Registration: ${record['Registration']?.toString() ?? ''}',
+                    ),
+                    Text(
+                      'Device ID: ${record['deviceId']?.toString() ?? ''}',
+                    ),
+                    Text(
+                      'Attendance marked at: $attendanceTime',
+                    ),
+                  ],
+                ),
                 ),
               );
             },
