@@ -193,6 +193,7 @@ class _CodeState extends State<Code> {
       ).showSnackBar(SnackBar(content: Text("Error giving attendance: $e")));
     }
   }
+
 Future<void> _endAttendance() async {
 
     try {
@@ -283,20 +284,24 @@ class _listState extends State<list> {
     _studentFuture = student(widget.subId);
   }
 
-  Future<List<Map<String, dynamic>>> student(String subId) async {
-    final querySnapshot = await FirebaseFirestore.instance
-        .collection('new')
-        .doc(subId)
-        .collection('session')
-        .get();
+Future<List<Map<String, dynamic>>> student(String subId) async {
+  final querySnapshot = await FirebaseFirestore.instance
+      .collection('new')
+      .doc(subId)
+      .collection('session')
+      .get();
 
-    return querySnapshot.docs.map((doc) {
-      return {
-        'studentEmail': doc.data()['studentEmail'] ?? '',
-        'attendanceMarkedAt': doc.data()['attendanceMarkedAt'],
-      };
-    }).toList();
-  }
+  return querySnapshot.docs.map((doc) {
+    final data = doc.data();
+
+    return {
+      'studentEmail': data['studentEmail'] ?? '',
+      'Registration': data['Registration'] ?? '',
+      'attendanceMarkedAt': data['attendanceMarkedAt'],
+      'deviceId': data['deviceId'] ?? '',
+    };
+  }).toList();
+}
 
   @override
   Widget build(BuildContext context) {
