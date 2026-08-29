@@ -1,8 +1,6 @@
 plugins {
     id("com.android.application")
     id("dev.flutter.flutter-gradle-plugin")
-    // REQUIRED: Google Services Plugin for Firebase / Google Sign-In
-    id("com.google.gms.google-services")
 }
 
 android {
@@ -23,16 +21,14 @@ android {
         versionName = flutter.versionName
 
         multiDexEnabled = true
-        ndk {
-            abiFilters.addAll(setOf("armeabi-v7a"))
-        }
+      
     }
 
     buildTypes {
         release {
             signingConfig = signingConfigs.getByName("debug")
-          isMinifyEnabled = false    // ✅ Correct Kotlin DSL property
-        isShrinkResources = false  // ✅ Correct Kotlin DSL property
+          isMinifyEnabled = false   
+        isShrinkResources = false  
         }
     }
 }
