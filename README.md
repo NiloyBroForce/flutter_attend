@@ -36,28 +36,18 @@ The database used is Firebase, which is a no-sql database that organises data in
 
 Screenshots of the application interface are included below.
 <p align="center">
-  <img src="https://github.com/user-attachments/assets/f19bc649-e286-4e35-9ab1-68e5dad4ef67" alt="SignIn" height="400" />
-  <img src="https://github.com/user-attachments/assets/771f9516-62a2-4699-af97-343e6b2d7dc4" alt="SignUp" height="400" />
+  <img src="https://github.com/user-attachments/assets/ad04fe1e-f0db-48d8-a004-57f85dd3de25" alt="Login height="400"/>
+  <img src="https://github.com/user-attachments/assets/d093888f-5b0c-49ce-bf50-ac77ab842419" alt="StudentDashboard" height="400" />
 </p>
 
 <p align="center">
-  <img src="https://github.com/user-attachments/assets/4a6f9d01-785f-4c26-a835-d8925167fa52" alt="StudentDashboard2" height="400" />
-  <img src="https://github.com/user-attachments/assets/006ab0e7-ea54-4c7b-a54f-f33f40fe1e4e" alt="StudentDashboard" height="400" />
-</p>
-
-<p align="center">
-  <img src="https://github.com/user-attachments/assets/de650c7f-5538-4d91-a18b-2809782e17ac" alt="TeacherDashboard" height="400" />
+  <img src="https://github.com/user-attachments/assets/67343408-40ce-4a80-a8b4-bd6b76c71c1f" alt="TeacherDashboard" height="400" />
   <img src="https://github.com/user-attachments/assets/08811d25-684b-489f-abb0-557ef71cc395" alt="AddSubjectForm" height="400" />
 </p>
 
 <p align="center">
-  <img src="https://github.com/user-attachments/assets/9f4bfbd2-bf11-4945-9d01-e17923d940db" alt="QrCode" height="400" />
-  <img src="https://github.com/user-attachments/assets/d3d64455-05d5-41b9-9626-d7c7030c2f64" alt="ScanQrCode" height="400" />
-</p>
-
-<p align="center">
+  <img src="https://github.com/user-attachments/assets/294233c7-f0ef-4ac9-b5da-2fea03133774" alt="Code" height="400" />
   <img src="https://github.com/user-attachments/assets/fb3a94f9-6d9c-40aa-9fed-7e1820bfc926" alt="AttendanceList" height="400" />
-  <img src="https://github.com/user-attachments/assets/a9c16403-4656-4f33-8190-09eb12070156" alt="AttendanceConfirmation" height="400" />
 </p>
 
 ## Screenshots description
